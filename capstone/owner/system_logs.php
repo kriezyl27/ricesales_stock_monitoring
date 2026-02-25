@@ -54,14 +54,6 @@ $payments = $conn->query("
   LIMIT 200
 ");
 
-$payreq = $conn->query("
-  SELECT pr.pay_req_id, pr.sale_id, pr.phone, pr.requested_at, pr.status
-  FROM payment_request pr
-  WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
-  ORDER BY pr.requested_at DESC
-  LIMIT 200
-");
-
 $push = $conn->query("
   SELECT pn.push_notif_id, pn.payment_id, pn.customer_id, pn.message, pn.sent_at, pn.status
   FROM push_notif_logs pn
@@ -118,6 +110,20 @@ if($hasSupplierPayments){
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
 <link href="../css/layout.css" rel="stylesheet">
+<style>
+  #tab-pay .push-log-table th:nth-child(1),
+  #tab-pay .push-log-table td:nth-child(1) { min-width: 160px; white-space: nowrap; }
+  #tab-pay .push-log-table th:nth-child(2),
+  #tab-pay .push-log-table td:nth-child(2),
+  #tab-pay .push-log-table th:nth-child(3),
+  #tab-pay .push-log-table td:nth-child(3),
+  #tab-pay .push-log-table th:nth-child(4),
+  #tab-pay .push-log-table td:nth-child(4) { min-width: 90px; white-space: nowrap; }
+  #tab-pay .push-log-table th:nth-child(5),
+  #tab-pay .push-log-table td:nth-child(5) { min-width: 90px; white-space: nowrap; }
+  #tab-pay .push-log-table th:nth-child(6),
+  #tab-pay .push-log-table td:nth-child(6) { min-width: 320px; }
+</style>
 </head>
 <body>
 
@@ -305,50 +311,10 @@ if($hasSupplierPayments){
               </div>
             </div>
 
-            <div class="col-12 col-xl-6">
-              <h6 class="fw-bold mb-2 mt-3"><i class="fa-solid fa-paper-plane me-1"></i> Payment Requests</h6>
+            <div class="col-12">
+              <h6 class="fw-bold mb-2 mt-3"><i class="fa-solid fa-bell me-1"></i> Notifications</h6>
               <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Requested At</th>
-                      <th>Request ID</th>
-                      <th>Sale ID</th>
-                      <th>Phone</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  <?php if($payreq && $payreq->num_rows>0): ?>
-                    <?php while($r=$payreq->fetch_assoc()): ?>
-                      <?php
-                        $st = strtolower(trim($r['status'] ?? ''));
-                        $badge = 'bg-secondary';
-                        if($st==='sent') $badge='bg-info';
-                        elseif($st==='pending') $badge='bg-warning text-dark';
-                        elseif($st==='done' || $st==='completed') $badge='bg-success';
-                        elseif($st==='failed') $badge='bg-danger';
-                      ?>
-                      <tr>
-                        <td><?= htmlspecialchars(date("M d, Y h:i A", strtotime($r['requested_at']))) ?></td>
-                        <td class="fw-semibold">#<?= (int)$r['pay_req_id'] ?></td>
-                        <td>#<?= (int)$r['sale_id'] ?></td>
-                        <td><?= htmlspecialchars($r['phone'] ?: '—') ?></td>
-                        <td><span class="badge <?= $badge ?>"><?= htmlspecialchars(strtoupper($st ?: 'N/A')) ?></span></td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr><td colspan="5" class="text-center text-muted">No payment request logs found.</td></tr>
-                  <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="col-12 col-xl-6">
-              <h6 class="fw-bold mb-2 mt-3"><i class="fa-solid fa-bell me-1"></i> Push Notifications</h6>
-              <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
+                <table class="table table-striped align-middle mb-0 push-log-table">
                   <thead class="table-dark">
                     <tr>
                       <th>Sent At</th>
