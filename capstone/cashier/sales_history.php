@@ -16,9 +16,6 @@ include '../config/db.php';
 
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/* =========================
-Filters (optional)
-========================= */
 $q = trim($_GET['q'] ?? '');
 $date_from = $_GET['date_from'] ?? '';
 $date_to = $_GET['date_to'] ?? '';
@@ -55,16 +52,10 @@ $types .= "s";
 // hide cancelled by default? keep as "all" view. we'll keep all.
 }
 
-/* =========================
-Pagination
-========================= */
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
 
-/* =========================
-Count total
-========================= */
 $countSql = "
 SELECT COUNT(*) AS cnt
 FROM sales s
@@ -79,9 +70,6 @@ $stmt->close();
 
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
-/* =========================
-Fetch sales list
-========================= */
 $listSql = "
 SELECT
 s.sale_id, s.sale_date, s.total_amount, s.status, s.customer_id,
@@ -100,9 +88,6 @@ $stmt->execute();
 $salesRes = $stmt->get_result();
 $stmt->close();
 
-/* =========================
-If view details requested
-========================= */
 $view_id = isset($_GET['view']) ? (int)$_GET['view'] : 0;
 $saleInfo = null;
 $items = null;

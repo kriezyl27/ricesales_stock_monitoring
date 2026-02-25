@@ -12,9 +12,6 @@ $user_id = (int)($_SESSION['user_id'] ?? 0);
 include '../config/db.php';
 $error = "";
 
-/* ==============================
-   HANDLE STOCK ADJUSTMENT
-============================== */
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
     $product_id  = (int)($_POST['product_id'] ?? 0);
@@ -109,9 +106,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     }
 }
 
-/* ==============================
-   FETCH PRODUCTS WITH STOCK
-============================== */
 $products = $conn->query("
 SELECT
     p.product_id,

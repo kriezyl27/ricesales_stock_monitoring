@@ -11,28 +11,15 @@ if($payment_id <= 0){
   die("Invalid payment.");
 }
 
-/* =========================
-   SETTINGS (EDIT THESE)
-========================= */
 $companyName = "DE ORO HIYS GENERAL MERCHANDISE";
 $companyAddr = "V Castro St, Carmen";
 $vatTin      = "000-000-000-000";
 $posSn       = "POS01-SN: XXXXXXXX";
 $minNo       = "MIN#XXXXXXXXXXXX";
 
-/*
-OPTIONAL DISPLAY ONLY (NO DB CHANGE)
-If you want to display that the ORIGINAL SALE had PWD/SC discount:
-Use: payment_receipt.php?payment_id=5&discount=PWD  OR  &discount=SC
-This will only show the text label "LESS PWD DISC" / "LESS SC DISC"
-It will NOT recompute any totals.
-*/
 $discountType = strtoupper(trim((string)($_GET['discount'] ?? ''))); // PWD | SC | ''
 $hasDiscount  = in_array($discountType, ['PWD','SC'], true);
 
-/* =========================
-   LOAD PAYMENT + SALE + CUSTOMER + AR
-========================= */
 $stmt = $conn->prepare("
   SELECT
     p.payment_id, p.sale_id, p.amount, p.method, p.status, p.paid_at, p.external_ref,
@@ -59,9 +46,6 @@ if(!$data){
   die("Payment not found.");
 }
 
-/* =========================
-   DISPLAY VALUES
-========================= */
 $customer = trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? ''));
 if($customer === '') $customer = 'Walk-in';
 
@@ -71,10 +55,6 @@ $fullyPaid = ($arStatus === 'paid' || $remaining <= 0.00001);
 
 $payLabel = $fullyPaid ? "PAYMENT RECEIPT (FULLY PAID)" : "PAYMENT RECEIPT (PARTIAL)";
 
-/* =========================
-   OPTIONAL: CASH + CHANGE (NO DB CHANGE)
-   Use: payment_receipt.php?payment_id=5&cash=500
-========================= */
 $cashGiven = null;
 $change = null;
 if(isset($_GET['cash']) && is_numeric($_GET['cash'])){

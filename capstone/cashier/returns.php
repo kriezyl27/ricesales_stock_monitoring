@@ -15,20 +15,9 @@ $user_id = (int)($_SESSION['user_id'] ?? 0);
 include '../config/db.php';
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/*
-ENHANCEMENTS ADDED:
-1) Auto-load products by Sale (AJAX) -> no manual product_id typing
-2) Show max returnable qty (UI + still enforced server-side)
-3) Reason modal (view full reason)
-*/
-
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
 
-/* =========================
-AJAX: Load Products from a Sale
-Returns: [{product_id, label, sold_qty, returned_qty, max_qty}]
-========================= */
 if(isset($_GET['ajax']) && $_GET['ajax'] === 'sale_items'){
 $sale_id = (int)($_GET['sale_id'] ?? 0);
 
@@ -104,9 +93,6 @@ echo json_encode($out);
 exit;
 }
 
-/* =========================
-Create Return Request
-========================= */
 if(isset($_POST['create_return'])){
 $sale_id = (int)($_POST['sale_id'] ?? 0);
 $product_id= (int)($_POST['product_id'] ?? 0);
@@ -180,10 +166,6 @@ header("Location: returns.php?success=" . urlencode("Return request submitted (P
 exit;
 }
 
-/* =========================
-Data for dropdowns
-========================= */
-// List recent cashier sales
 $sales = $conn->prepare("
 SELECT s.sale_id, s.sale_date, c.first_name, c.last_name
 FROM sales s
@@ -198,9 +180,6 @@ $sales->execute();
 $salesRes = $sales->get_result();
 $sales->close();
 
-/* =========================
-Return Requests List
-========================= */
 $q = trim($_GET['q'] ?? '');
 $filter_status = strtolower(trim($_GET['status'] ?? 'all')); // all|pending|approved|rejected
 

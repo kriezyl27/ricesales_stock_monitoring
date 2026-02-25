@@ -8,9 +8,6 @@ include '../config/db.php';
 
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/* =========================================================
-SETTINGS (same as Admin)
-========================================================= */
 $LEAD_TIME_DAYS = 2;
 $SAFETY_STOCK_KG = 10;
 $TARGET_DAYS_COVER= 7;
@@ -19,14 +16,8 @@ $RESTOCK_LOOKBACK_DAYS = 30;
 $MONTHS_HISTORY = 12;
 $FORECAST_MONTHS = 3;
 
-/* =========================================================
-STATUS FILTER (same as Admin)
-========================================================= */
 $VALID_SALE_STATUSES = "('paid','unpaid')";
 
-/* =========================
-SALES PER PRODUCT (kg) - ALL TIME
-========================= */
 $salesPerProduct = [];
 $sql = "
 SELECT
@@ -51,9 +42,6 @@ if($res){
   }
 }
 
-/* =========================
-SALES OVER TIME (MONTHLY) - KG + REVENUE (history window)
-========================= */
 $months = [];
 $salesKgData = [];
 $salesRevData = [];
@@ -107,9 +95,6 @@ for($dt = clone $start; $dt <= $end; $dt->modify('+1 month')){
   $salesRevData[] = (float)($monthMapRev[$key] ?? 0);
 }
 
-/* =========================
-KPI SUMMARY
-========================= */
 $topProduct = $salesPerProduct[0]['product_label'] ?? 'N/A';
 $totalSoldKg = array_sum($salesKgData);
 $totalRevenue = array_sum($salesRevData);
@@ -122,11 +107,6 @@ if($totalMonths >= 2 && (float)$salesKgData[$totalMonths-2] > 0){
   $growth = (($salesKgData[$totalMonths-1] - $salesKgData[$totalMonths-2]) / $salesKgData[$totalMonths-2]) * 100;
 }
 
-/* =========================
-Forecast (Next N months) - Adaptive SMA on KG
-- window = min(3, available data)
-- labels start AFTER the last month in your data (fix mismatch)
-========================= */
 function nextMonthsLabelsFromLast(array $monthsY, array $monthsM, int $n = 3){
   $labels = [];
 
@@ -173,9 +153,6 @@ for($i=0; $i<count($forecastLabels); $i++){
   $forecastTable[] = ['month'=>$forecastLabels[$i], 'pred'=>$forecastData[$i]];
 }
 
-/* =========================================================
-Sales by Day of Week (last 90 days)
-========================================================= */
 $daysOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 $daySalesMap = array_fill_keys($daysOrder, 0.0);
 
@@ -217,9 +194,6 @@ foreach($daySalesMap as $d=>$kg){
   if($kg > $peakKg){ $peakKg=$kg; $peakDay=$d; }
 }
 
-/* =========================================================
-Restock Suggestions (last N days)
-========================================================= */
 $restockRows = [];
 $fastMovers = [];
 $slowMovers = [];
@@ -320,9 +294,6 @@ $slowMovers = array_slice($slowMovers, 0, 5);
 $growthClass = ($growth >= 0) ? 'text-success' : 'text-danger';
 $growthIcon = ($growth >= 0) ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
 
-/* =========================================================
-Modal chart data: Top Products + Stock Levels
-========================================================= */
 $topProdLabels = [];
 $topProdKg = [];
 foreach(array_slice($salesPerProduct, 0, 10) as $r){

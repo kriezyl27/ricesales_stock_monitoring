@@ -9,9 +9,6 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 $sale_id = (int)($_GET['sale_id'] ?? 0);
 if($sale_id <= 0){ die("Invalid sale."); }
 
-/* =========================
-   RECEIPT SETTINGS
-========================= */
 $companyName = "DE ORO HIYS GENERAL MERCHANDISE";
 $companyAddr = "V Castro St, Carmen";
 $vatTin      = "000-000-000-000";
@@ -21,9 +18,6 @@ $minNo       = "MIN#XXXXXXXXXXXX";
 $VAT_MODE = "EXEMPT"; // EXEMPT | VATABLE
 $VAT_RATE = 0.12;
 
-/* =========================
-   LOAD SALE + CUSTOMER + CASHIER
-========================= */
 $stmt = $conn->prepare("
   SELECT s.sale_id, s.sale_date, s.total_amount, s.status,
          c.customer_id, c.first_name, c.last_name, c.phone, c.address,
@@ -41,10 +35,6 @@ $sale = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 if(!$sale){ die("Sale not found."); }
 
-/* =========================
-   LOAD SALE ITEMS + PRODUCT INFO
-   (NO SKU)
-========================= */
 $stmt = $conn->prepare("
   SELECT
     si.sales_item_id,
@@ -68,9 +58,6 @@ $items = [];
 while($r = $resItems->fetch_assoc()){ $items[] = $r; }
 $stmt->close();
 
-/* =========================
-   UTANG? LOAD AR
-========================= */
 $isUtang = (strtolower((string)$sale['status']) === 'unpaid');
 $ar = null;
 
@@ -89,9 +76,6 @@ if($isUtang){
   }
 }
 
-/* =========================
-   CASH PAYMENT INFO (optional)
-========================= */
 $payment = null;
 if(!$isUtang){
   $stmt = $conn->prepare("
@@ -109,25 +93,12 @@ if(!$isUtang){
   }
 }
 
-/* =========================
-   DISCOUNT + UNIT TYPES FROM POS SESSION
-   (this is how we connect receipt to pos.php without DB changes)
-========================= */
 $discType = 'none';
 $discRate = 0.0;
 $discAmt  = 0.0;
 $discName = '';
 $discIdNo = '';
 
-/*
-pos.php saves:
-$_SESSION['sale_discount'][$sale_id] = [
-  'type','rate','gross','disc','net','name','idno',
-  'units' => [
-    ['product_id'=>..,'unit_type'=>'kg|sack','qty_input'=>..], ...
-  ]
-]
-*/
 $unitMap = []; // product_id => ['unit_type'=>..., 'qty_input'=>...]
 if(isset($_SESSION['sale_discount'][$sale_id]) && is_array($_SESSION['sale_discount'][$sale_id])){
   $d = $_SESSION['sale_discount'][$sale_id];
@@ -151,9 +122,6 @@ if(isset($_SESSION['sale_discount'][$sale_id]) && is_array($_SESSION['sale_disco
   }
 }
 
-/* =========================
-   TOTALS
-========================= */
 $subtotal = 0.0;
 foreach($items as $it){
   $line = (float)($it['line_total'] ?? 0);

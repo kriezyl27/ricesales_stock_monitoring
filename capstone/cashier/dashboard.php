@@ -5,10 +5,6 @@ if(strtolower($_SESSION['role'] ?? '') !== 'cashier'){ header("Location: ../logi
 
 include '../config/db.php';
 
-/* -------------------------
-GLOBAL THRESHOLDS (from admin stock_settings)
-Table: stock_settings (single row id=1)
-------------------------- */
 $DEFAULT_LOW  = 10.0;
 $DEFAULT_OVER = 1000.0;
 
@@ -26,13 +22,9 @@ $user_id = (int)($_SESSION['user_id'] ?? 0);
 
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-// Today range (safe vs timezone issues)
 $todayStart = date('Y-m-d 00:00:00');
 $todayEnd = date('Y-m-d 00:00:00', strtotime('+1 day'));
 
-/* -------------------------
-Sales Today (count + revenue)
-------------------------- */
 $stmt = $conn->prepare("
 SELECT
 COUNT(*) AS total_sales,
@@ -47,9 +39,6 @@ $stmt->execute();
 $today = $stmt->get_result()->fetch_assoc() ?: ['total_sales'=>0,'revenue'=>0];
 $stmt->close();
 
-/* -------------------------
-KG Sold Today (from sales_items)
-------------------------- */
 $stmt = $conn->prepare("
 SELECT IFNULL(SUM(si.qty_kg),0) AS sold_kg
 FROM sales_items si
@@ -63,10 +52,6 @@ $stmt->execute();
 $kgToday = $stmt->get_result()->fetch_assoc() ?: ['sold_kg'=>0];
 $stmt->close();
 
-/* -------------------------
-Pending Utang (AR) for THIS cashier only
-Link: account_receivable -> sales -> cashier (user_id)
-------------------------- */
 $stmt = $conn->prepare("
 SELECT IFNULL(SUM(ar.balance),0) AS ar_balance
 FROM account_receivable ar
@@ -80,9 +65,6 @@ $stmt->execute();
 $ar = $stmt->get_result()->fetch_assoc() ?: ['ar_balance'=>0];
 $stmt->close();
 
-/* -------------------------
-Low stock preview (computed stock <= admin threshold)
-------------------------- */
 $threshold = $LOW_STOCK_THRESHOLD;
 
 $stmt = $conn->prepare("

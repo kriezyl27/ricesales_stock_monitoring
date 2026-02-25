@@ -36,7 +36,6 @@ if(!in_array($status, $allowedStatus, true)){
     $status = 'active';
 }
 
-// Check if username exists
 $check = $conn->prepare("SELECT user_id FROM users WHERE LOWER(username)=LOWER(?) LIMIT 1");
 $check->bind_param("s", $username);
 $check->execute();
@@ -48,7 +47,6 @@ if($exists){
     exit;
 }
 
-// Hash password (bcrypt)
 $hash = password_hash($password, PASSWORD_DEFAULT);
 
 // Insert user
@@ -60,7 +58,7 @@ $stmt->bind_param("sssssss", $username, $hash, $first_name, $last_name, $phone, 
 $stmt->execute();
 $stmt->close();
 
-// Log activity (optional but good)
+// Log activity
 $admin_id = (int)$_SESSION['user_id'];
 $desc = "Created new user ($role): $username";
 $log = $conn->prepare("INSERT INTO activity_logs (user_id, activity_type, description, created_at) VALUES (?, 'USER_CREATE', ?, NOW())");

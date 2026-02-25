@@ -13,9 +13,6 @@ include '../config/db.php';
 
 $username = $_SESSION['username'] ?? 'Admin';
 
-/* =========================
-Helper
-========================= */
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 function statusBadge($status){
@@ -27,9 +24,6 @@ function statusBadge($status){
   return 'bg-secondary';
 }
 
-/* =========================
-FILTERS (optional)
-========================= */
 $from = $_GET['from'] ?? date('Y-m-01');
 $to = $_GET['to'] ?? date('Y-m-d');
 $status = strtolower(trim($_GET['status'] ?? 'all'));
@@ -41,9 +35,6 @@ if(!in_array($status, $allowedStatus, true)) $status = 'all';
 if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) $from = date('Y-m-01');
 if(!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) $to = date('Y-m-d');
 
-/* =========================
-SUMMARY
-========================= */
 $where = "WHERE DATE(s.sale_date) BETWEEN ? AND ? AND (s.status IS NULL OR LOWER(s.status) <> 'cancelled')";
 $params = [$from, $to];
 $types = "ss";

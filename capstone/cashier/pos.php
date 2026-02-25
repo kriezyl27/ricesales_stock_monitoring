@@ -14,26 +14,6 @@ $user_id  = (int)($_SESSION['user_id'] ?? 0);
 
 include '../config/db.php';
 
-/*
-CASHIER POS (New Sale)
-- Creates sale + sales_items
-- Deducts inventory via inventory_transactions (type='out')
-- If UNPAID (utang) -> creates account_receivable record
-- ✅ PWD/SC discount (NO DB CHANGES)
-  - computes DISCOUNT on checkout
-  - saves NET total to sales.total_amount
-  - stores discount details in SESSION for receipt printing
-
-✅ UPDATED FOR RICE BUSINESS
-- Supports selling PER KILO (tingi) OR PER SACK
-- Uses products.price_per_kg and products.price_per_sack
-- Converts sacks -> kg using products.unit_weight_kg
-- Server-side recomputes unit_price and qty_kg (ignores client tampering)
-*/
-
-/* -------------------------
-Helpers
-------------------------- */
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 /* Preserve only header fields across error refresh */
@@ -48,10 +28,6 @@ function pos_save_old($customer_id, $sale_type, $due_date, $discount_type, $disc
   ];
 }
 
-/*
-AUTO compute due date based on kinsenas: 2, 15, 25, 30
-✅ NEXT KINSENAS ONLY (dili pwede today)
-*/
 function compute_kinsenas_due_date(): string {
   $today = new DateTime();
   $year  = (int)$today->format('Y');
@@ -82,10 +58,6 @@ function compute_kinsenas_due_date(): string {
   return sprintf('%04d-%02d-%02d', $nextYear, $nextMonth, 2);
 }
 
-/* -------------------------
-Load Products with computed stock
-stock = SUM(in) - SUM(out) + SUM(adjust)
-------------------------- */
 $products = [];
 $sqlProducts = "
 SELECT
@@ -120,18 +92,12 @@ if($resP){
   }
 }
 
-/* -------------------------
-Load Customers (optional)
-------------------------- */
 $customers = [];
 $resC = $conn->query("SELECT customer_id, first_name, last_name, phone FROM customers ORDER BY created_at DESC");
 if($resC){
   while($r = $resC->fetch_assoc()) $customers[] = $r;
 }
 
-/* -------------------------
-Create new customer (quick add)
-------------------------- */
 if(isset($_POST['add_customer'])){
   $fn = trim($_POST['first_name'] ?? '');
   $ln = trim($_POST['last_name'] ?? '');
@@ -148,9 +114,6 @@ if(isset($_POST['add_customer'])){
   exit;
 }
 
-/* -------------------------
-Messages + restore old header fields
-------------------------- */
 $err = $_GET['error'] ?? '';
 $success = $_GET['success'] ?? '';
 
@@ -170,9 +133,6 @@ if($old_sale_type === 'utang' && $old_due_date === ''){
   $old_due_date = compute_kinsenas_due_date();
 }
 
-/* -------------------------
-Handle checkout
-------------------------- */
 if(isset($_POST['checkout'])){
   $customer_id = (int)($_POST['customer_id'] ?? 0);
   $sale_type   = strtolower(trim($_POST['sale_type'] ?? 'cash')); // cash | utang
@@ -701,10 +661,6 @@ function formatISODate(y, m, d){
   return `${y}-${mm}-${dd}`;
 }
 
-/*
-Client display only (server still enforces due date)
-✅ NEXT kinsenas only (dili pwede today)
-*/
 function computeKinsenasDueDateClient(){
   const now = new Date();
   const year = now.getFullYear();

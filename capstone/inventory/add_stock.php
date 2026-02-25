@@ -12,14 +12,8 @@ include '../config/db.php';
 
 $error = "";
 
-/* =========================
-   CONFIG
-========================= */
 $OVERSTOCK_LIMIT_KG = 1000; // warehouse max capacity per product (kg)
 
-/**
- * ✅ AJAX: Add Supplier (modal)
- */
 if(isset($_POST['ajax']) && $_POST['ajax'] === 'add_supplier'){
     header('Content-Type: application/json; charset=utf-8');
 
@@ -72,9 +66,6 @@ if(isset($_POST['ajax']) && $_POST['ajax'] === 'add_supplier'){
     exit;
 }
 
-/**
- * ✅ AJAX: Get last supplier price for selected product+supplier
- */
 if(isset($_POST['ajax']) && $_POST['ajax'] === 'last_supplier_price'){
     header('Content-Type: application/json; charset=utf-8');
 
@@ -132,23 +123,6 @@ if(isset($_POST['ajax']) && $_POST['ajax'] === 'last_supplier_price'){
     exit;
 }
 
-/* =========================
-   STOCK IN (Receiving)
-   UI Inputs:
-   - qty_sacks
-   - supplier_price_per_sack
-   - transport_handling (whole delivery)
-   - markup_per_kg (SETTABLE)
-   Computations:
-   - qty_kg = qty_sacks * unit_weight_kg
-   - total_amount (AP) = (qty_sacks * supplier_price_per_sack) + transport_handling
-   - landed_cost_per_sack = supplier_price_per_sack + (transport_handling / qty_sacks)
-   - cost_per_kg = landed_cost_per_sack / unit_weight_kg
-   - suggested_sell_per_kg = cost_per_kg + markup_per_kg
-   Updates:
-   - products.price_per_sack = supplier_price_per_sack
-   - products.price_per_kg   = suggested_sell_per_kg
-========================= */
 if($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax'])){
 
     $product_id    = (int)($_POST['product_id'] ?? 0);
@@ -569,7 +543,6 @@ body { background:#f4f6f9;  padding-top: 60px; }
           <div class="col-md-4">
             <label class="form-label fw-semibold">Supplier Price per Sack (PHP)</label>
             <input type="number" step="0.01" min="0" name="supplier_price_per_sack" id="supplierPrice" class="form-control" value="" required>
-            <div class="form-text">Auto-fills only if this product was previously received from the selected supplier; otherwise enter price manually.</div>
           </div>
 
           <div class="col-md-4">

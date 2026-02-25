@@ -15,19 +15,9 @@ $user_id = (int)($_SESSION['user_id'] ?? 0);
 include '../config/db.php';
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/*
-CASHIER CUSTOMERS
-Table: customers(customer_id, first_name, last_name, phone, address, created_at)
-- Cashier can: add, edit, view
-- Used for Sales (POS) and Receivables
-*/
-
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
 
-/* =========================
-Add Customer
-========================= */
 if(isset($_POST['add_customer'])){
 $first = trim($_POST['first_name'] ?? '');
 $last = trim($_POST['last_name'] ?? '');
@@ -49,9 +39,6 @@ header("Location: customers.php?success=" . urlencode("Customer added successful
 exit;
 }
 
-/* =========================
-Edit Customer
-========================= */
 if(isset($_POST['edit_customer'])){
 $cid = (int)($_POST['customer_id'] ?? 0);
 $first = trim($_POST['first_name'] ?? '');
@@ -74,9 +61,6 @@ header("Location: customers.php?success=" . urlencode("Customer updated."));
 exit;
 }
 
-/* =========================
-Search + List
-========================= */
 $q = trim($_GET['q'] ?? '');
 
 $sql = "SELECT * FROM customers";

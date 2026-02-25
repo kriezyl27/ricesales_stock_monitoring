@@ -8,9 +8,6 @@ include '../config/db.php';
 $user_id = (int)$_SESSION['user_id'];
 $success = $error = "";
 
-/* =========================
-UPDATE PROFILE
-========================= */
 if(isset($_POST['update_profile'])){
 $first = trim($_POST['first_name'] ?? '');
 $last = trim($_POST['last_name'] ?? '');
@@ -33,9 +30,6 @@ $success = "Profile updated successfully.";
 }
 }
 
-/* =========================
-FETCH USER INFO
-========================= */
 $stmt = $conn->prepare("
 SELECT username, first_name, last_name, phone, role, created_at
 FROM users

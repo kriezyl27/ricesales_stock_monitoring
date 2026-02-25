@@ -9,27 +9,18 @@ $username = $_SESSION['username'] ?? 'User';
 $role = $_SESSION['role'] ?? '';
 include '../config/db.php';
 
-// Optional: restrict this dashboard to admin only
-// if(strtolower($role) !== 'admin'){ header("Location: ../cashier/dashboard.php"); exit; }
-
-/* =========================
-   INVENTORY SUMMARY
-========================= */
-// Total products
 $totalProductsRow = $conn->query("
     SELECT COUNT(*) AS total_products
     FROM products
     WHERE archived=0
 ")->fetch_assoc();
 
-// Total stock (source of truth = products.stock_kg)
 $totalStockRow = $conn->query("
     SELECT IFNULL(SUM(stock_kg),0) AS total_stock
     FROM products
     WHERE archived=0
 ")->fetch_assoc();
 
-// Total IN/OUT/ADJUST from transaction logs (DB enums are lowercase)
 $flowRow = $conn->query("
     SELECT
         IFNULL(SUM(CASE WHEN type='in' THEN qty_kg ELSE 0 END),0) AS total_in,
@@ -46,17 +37,13 @@ $inventory = [
     'total_adjust'   => (float)($flowRow['total_adjust'] ?? 0),
 ];
 
-/* =========================
-   AR & AP (Option C: TOTAL + OUTSTANDING)
-========================= */
-// AR Total (all records)
 $ar_total = $conn->query("
 SELECT 
     IFNULL(SUM(total_amount),0) AS total_ar
 FROM account_receivable
 ")->fetch_assoc();
 
-// AR Outstanding (balances only)
+//ar outstanding
 $ar_outstanding = $conn->query("
 SELECT 
     IFNULL(SUM(balance),0) AS balance_ar
@@ -64,14 +51,14 @@ FROM account_receivable
 WHERE LOWER(status) IN ('unpaid','partial','overdue','pending','approved')
 ")->fetch_assoc();
 
-// AP Total (all records)
+//ap all records
 $ap_total = $conn->query("
 SELECT 
     IFNULL(SUM(total_amount),0) AS total_ap
 FROM account_payable
 ")->fetch_assoc();
 
-// AP Outstanding (balances only)
+//ap outstanding
 $ap_outstanding = $conn->query("
 SELECT 
     IFNULL(SUM(balance),0) AS balance_ap
@@ -79,9 +66,6 @@ FROM account_payable
 WHERE LOWER(status) IN ('unpaid','partial','overdue','pending','approved')
 ")->fetch_assoc();
 
-/* =========================
-   NOTIFICATIONS (case safe)
-========================= */
 $notif_summary = $conn->query("
 SELECT COUNT(*) AS total_sent,
        SUM(CASE WHEN UPPER(status)='SENT' THEN 1 ELSE 0 END) AS successful,
@@ -89,9 +73,6 @@ SELECT COUNT(*) AS total_sent,
 FROM push_notif_logs
 ")->fetch_assoc();
 
-/* =========================
-   RECENT LOGINS
-========================= */
 $recent_logins = $conn->query("
 SELECT l.*, u.username
 FROM login_logs l
@@ -156,7 +137,6 @@ LIMIT 5
   </div>
 </div>
 
-<!-- Row 2: AR/AP/Notifications -->
 <div class="row g-4 mt-1">
   <div class="col-md-4">
     <div class="card modern-card bg-gradient-warning text-dark p-3">
@@ -186,7 +166,6 @@ LIMIT 5
   </div>
 </div>
 
-<!-- Recent Logins -->
 <div class="card shadow-sm mt-5 modern-card">
   <div class="card-body">
     <h5 class="fw-bold mb-3">Recent Logins</h5>

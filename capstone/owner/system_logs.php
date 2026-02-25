@@ -9,9 +9,6 @@ include '../config/db.php';
 $days = (int)($_GET['days'] ?? 30);
 if(!in_array($days, [7,30,90])) $days = 30;
 
-/* =========================
-   Helpers (safe checks)
-========================= */
 function tableExists(mysqli $conn, string $table): bool {
   $tableEsc = $conn->real_escape_string($table);
   $dbRes = $conn->query("SELECT DATABASE() AS dbname");
@@ -29,9 +26,6 @@ function tableExists(mysqli $conn, string $table): bool {
 
 $hasSupplierPayments = tableExists($conn, "supplier_payments");
 
-/* =========================
-   Activity Logs
-========================= */
 $activity = $conn->query("
   SELECT al.activity_id, al.created_at, al.activity_type, al.description,
          CONCAT(u.first_name,' ',u.last_name) AS user_name, u.role
@@ -42,9 +36,6 @@ $activity = $conn->query("
   LIMIT 200
 ");
 
-/* =========================
-   Login Logs
-========================= */
 $login = $conn->query("
   SELECT ll.log_id, ll.login_time, ll.device_info, ll.ip_address,
          CONCAT(u.first_name,' ',u.last_name) AS user_name, u.role
@@ -55,9 +46,6 @@ $login = $conn->query("
   LIMIT 200
 ");
 
-/* =========================
-   Payment / Notification Logs
-========================= */
 $payments = $conn->query("
   SELECT p.payment_id, p.sale_id, p.amount, p.method, p.status, p.paid_at, p.external_ref
   FROM payments p
@@ -81,11 +69,6 @@ $push = $conn->query("
   ORDER BY pn.sent_at DESC
   LIMIT 200
 ");
-
-/* =========================
-   FINANCE LOGS (AP / AR)
-   Works even without activity_logs logging
-========================= */
 
 // AR list (Receivable)
 $ar = $conn->query("

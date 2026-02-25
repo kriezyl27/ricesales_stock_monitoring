@@ -6,10 +6,6 @@ if(strtolower($_SESSION['role'] ?? '') !== 'owner'){ header("Location: ../login.
 $username = $_SESSION['username'] ?? 'Owner';
 include '../config/db.php';
 
-/* =========================
-Read GLOBAL thresholds (admin-controlled)
-Table: stock_settings (single row id=1)
-========================= */
 $DEFAULT_LOW = 10.0;
 $DEFAULT_OVER = 1000.0;
 
@@ -33,12 +29,6 @@ if($low < 0) $low = 0;
 if($over <= 0) $over = $dbOver;
 if($over <= $low) $over = $low + 1;
 
-/* =========================
-QUERY: INVENTORY MONITORING
-- stock comes from products.stock_kg (source of truth)
-- last_in_date from inventory_transactions
-- age_days based on last_in_date (if none -> NULL)
-========================= */
 $productsRows = [];
 
 $sql = "
@@ -159,10 +149,6 @@ $agingItems[] = [
 }
 }
 
-/* =========================
-AUTO POPUP PRIORITY
-over > low > aging
-========================= */
 $autoModal = null;
 if(count($overItems) > 0) $autoModal = 'overStockModal';
 elseif(count($lowItems) > 0) $autoModal = 'lowStockModal';

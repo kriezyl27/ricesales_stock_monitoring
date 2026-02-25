@@ -10,15 +10,6 @@ $user_id  = (int)($_SESSION['user_id'] ?? 0);
 
 include '../config/db.php';
 
-/**
- * IMPORTANT:
- * Your DB enums are LOWERCASE:
- * inventory_transactions.reference_type: sale,purchase,return,delivery,adjust
- * inventory_transactions.type: in,out,adjust
- *
- * So we will use lowercase consistently.
- */
-
 // --- Handle Approve Return ---
 if(isset($_POST['approve_return'])) {
     $return_id = (int)($_POST['return_id'] ?? 0);
@@ -79,7 +70,7 @@ if(isset($_POST['approve_return'])) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inventory Logs | DE ORO HIYS</title>
+<title>Stock Logs | DE ORO HIYS</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">

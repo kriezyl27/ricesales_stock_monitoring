@@ -1,6 +1,4 @@
 <?php
-// owner/supplier_payables.php  (ENHANCED)
-// One page: Approve + Pay + View payment history + Filters + Search + Summary cards
 
 session_start();
 if(!isset($_SESSION['user_id'])){ header("Location: ../login.php"); exit; }
@@ -14,9 +12,6 @@ $owner_id = (int)$_SESSION['user_id'];
 $success = "";
 $error   = "";
 
-/* =========================
-   Helpers: schema detection
-========================= */
 function tableExists(mysqli $conn, string $table): bool {
   $tableEsc = $conn->real_escape_string($table);
   $dbRes = $conn->query("SELECT DATABASE() AS dbname");
@@ -54,9 +49,6 @@ $hasApprovedAt = columnExists($conn, "account_payable", "approved_at");
 
 $hasSupplierPayments = tableExists($conn, "supplier_payments");
 
-/* =========================
-   Actions: Approve / Pay
-========================= */
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
   // APPROVE (only if approved column exists)
@@ -193,9 +185,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
   }
 }
 
-/* =========================
-   Filters / Search / Paging
-========================= */
 $filter = strtolower(trim($_GET['filter'] ?? 'open'));
 $allowedFilters = ['open','unapproved','overdue','paid','all'];
 if(!in_array($filter, $allowedFilters)) $filter = 'open';
@@ -234,9 +223,6 @@ if($search !== ''){
   $where .= " AND (sup.name LIKE '$searchLike' OR ap.ap_id LIKE '$searchLike' OR ap.purchase_id LIKE '$searchLike')";
 }
 
-/* =========================
-   Summary cards
-========================= */
 $sumSelect = "
   SELECT
     IFNULL(SUM(ap.total_amount),0) AS total_ap,
@@ -262,9 +248,6 @@ $summary = $conn->query("
 $total_ap = f($summary['total_ap']);
 $bal_ap   = f($summary['balance_ap']);
 
-/* =========================
-   Payables list + total rows
-========================= */
 $listSelect = "
   SELECT
     ap.ap_id, ap.purchase_id, ap.supplier_id, ap.total_amount, ap.amount_paid, ap.balance, ap.due_date, ap.status, ap.created_at,

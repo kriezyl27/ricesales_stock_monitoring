@@ -28,18 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-/* =========================
-   1) CSRF CHECK
-========================= */
 $csrf_post = (string)($_POST['csrf_token'] ?? '');
 $csrf_sess = (string)($_SESSION['csrf_token'] ?? '');
 if ($csrf_post === '' || $csrf_sess === '' || !hash_equals($csrf_sess, $csrf_post)) {
   redirect_login("Invalid request. Please refresh and try again.");
 }
 
-/* =========================
-   2) Input
-========================= */
 $username = trim((string)($_POST['username'] ?? ''));
 $password = (string)($_POST['password'] ?? '');
 $remember = isset($_POST['remember']);
@@ -48,11 +42,6 @@ if ($username === '' || $password === '') {
   redirect_login("Please enter username and password.");
 }
 
-/* =========================
-   3) Basic brute-force protection
-   - uses SESSION (ok for capstone)
-   - better in DB for real deployment
-========================= */
 $now = time();
 $_SESSION['login_fail_count'] = (int)($_SESSION['login_fail_count'] ?? 0);
 $_SESSION['login_lock_until'] = (int)($_SESSION['login_lock_until'] ?? 0);
@@ -62,9 +51,6 @@ if ($now < $_SESSION['login_lock_until']) {
   redirect_login("Too many attempts. Try again in {$remain} seconds.");
 }
 
-/* =========================
-   4) Fetch user (prepared)
-========================= */
 $stmt = $conn->prepare("SELECT user_id, username, password, role, status FROM users WHERE username=? LIMIT 1");
 if (!$stmt) {
   redirect_login("Server error. Please try again.");
@@ -74,9 +60,6 @@ $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-/* =========================
-   5) Validate user + password
-========================= */
 if (!$user) {
   // fail count
   $_SESSION['login_fail_count']++;
@@ -122,23 +105,12 @@ if (!$isValid) {
 $_SESSION['login_fail_count'] = 0;
 $_SESSION['login_lock_until'] = 0;
 
-/* =========================
-   6) Session fixation protection
-========================= */
 session_regenerate_id(true);
 
-/* =========================
-   7) Set session
-========================= */
 $_SESSION['user_id']  = (int)$user['user_id'];
 $_SESSION['username'] = (string)$user['username'];
 $_SESSION['role']     = (string)$user['role'];
 
-/* =========================
-   8) Remember me (safer cookie settings)
-   NOTE: real remember-me must store token hash in DB.
-   For capstone: cookie exists but don't treat it as login by itself.
-========================= */
 if ($remember) {
   $token = bin2hex(random_bytes(32));
 
@@ -164,9 +136,6 @@ if ($remember) {
   unset($_SESSION['remember_token']);
 }
 
-/* =========================
-   9) Log login
-========================= */
 $device = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device';
 
 // If behind proxy you can check HTTP_X_FORWARDED_FOR, but be careful trusting it
@@ -181,9 +150,6 @@ if ($logStmt) {
   $logStmt->close();
 }
 
-/* =========================
-   10) Redirect by role
-========================= */
 $role = strtolower(trim((string)$user['role']));
 
 if ($role === 'admin')   { header("Location: admin/dashboard.php"); exit; }

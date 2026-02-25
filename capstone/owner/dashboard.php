@@ -14,16 +14,9 @@ include '../config/db.php';
 
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
-/* =========================
-   SETTINGS (ALIGN WITH ANALYTICS.PHP)
-========================= */
 $VALID_SALE_STATUSES = "('paid','unpaid')";
 $MONTHS_HISTORY = 12;
 $FORECAST_MONTHS = 3;
-
-/* =========================
-   OWNER DASHBOARD METRICS
-========================= */
 
 // Total products (not archived)
 $totalProductsRow = $conn->query("SELECT COUNT(*) AS cnt FROM products WHERE archived=0");
@@ -72,9 +65,6 @@ $revenueMonth = $salesMonthRow ? (float)$salesMonthRow->fetch_assoc()['revenue_m
 $pendingReturnsRow = $conn->query("SELECT COUNT(*) AS cnt FROM returns WHERE LOWER(status)='pending'");
 $pendingReturns = $pendingReturnsRow ? (int)$pendingReturnsRow->fetch_assoc()['cnt'] : 0;
 
-/* =========================
-   OVERSTOCK (INTERFACE ONLY)
-========================= */
 $OVERSTOCK_LIMIT_KG = 1000;
 
 $overCountRow = $conn->query("
@@ -111,9 +101,6 @@ $overstockList = $conn->query("
   LIMIT 8
 ");
 
-/* =========================
-   AR / AP SUMMARY
-========================= */
 $arRow = $conn->query("
   SELECT
     IFNULL(SUM(total_amount),0) AS total_ar,
@@ -130,9 +117,6 @@ $apRow = $conn->query("
 ");
 $ap = $apRow ? $apRow->fetch_assoc() : ['total_ap'=>0,'balance_ap'=>0];
 
-/* =========================
-   Top product (all-time sold kg) — ALIGNED STATUS FILTER
-========================= */
 $topProductRow = $conn->query("
     SELECT p.variety, p.grade, IFNULL(SUM(si.qty_kg),0) AS total_sold
     FROM sales_items si
@@ -147,9 +131,6 @@ $topProductRow = $conn->query("
 ");
 $topProduct = ($topProductRow && $topProductRow->num_rows) ? $topProductRow->fetch_assoc() : null;
 
-/* =========================
-   Recent inventory movements
-========================= */
 $recentInventory = $conn->query("
     SELECT it.created_at, it.product_id, it.qty_kg, it.type, it.reference_type, it.reference_id, it.note,
            p.variety, p.grade
@@ -159,9 +140,6 @@ $recentInventory = $conn->query("
     LIMIT 8
 ");
 
-/* =========================
-   Sales over time (monthly) for chart — ALIGNED (last 12 months)
-========================= */
 $months = [];
 $salesData = [];
 $monthsY = [];
@@ -206,10 +184,6 @@ for($dt = clone $start; $dt <= $end; $dt->modify('+1 month')){
     $monthsM[] = $m;
     $salesData[] = (float)($monthMap[$key] ?? 0);
 }
-
-/* =========================
-   Forecast — SMA (same as analytics.php)
-========================= */
 function nextMonthsLabelsFromLast(array $monthsY, array $monthsM, int $n = 3){
     $labels = [];
 

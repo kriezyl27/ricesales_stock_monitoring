@@ -12,9 +12,6 @@ exit;
 $username = $_SESSION['username'] ?? 'Admin';
 include '../config/db.php';
 
-/* =========================================================
-SETTINGS (based on client interview)
-========================================================= */
 $LEAD_TIME_DAYS = 2; // supplier lead time
 $SAFETY_STOCK_KG = 10; // buffer stock
 $TARGET_DAYS_COVER= 7; // target days of stock cover when ordering
@@ -35,14 +32,9 @@ if($TARGET_DAYS_COVER > 60) $TARGET_DAYS_COVER = 60;
 if($RESTOCK_LOOKBACK_DAYS < 7) $RESTOCK_LOOKBACK_DAYS = 7;
 if($RESTOCK_LOOKBACK_DAYS > 180) $RESTOCK_LOOKBACK_DAYS = 180;
 
-/* =========================================================
-STATUS FILTER (your system uses paid/unpaid)
-========================================================= */
 $VALID_SALE_STATUSES = "('paid','unpaid')";
 
-/* =========================
-SALES PER PRODUCT (kg) - ALL TIME
-========================= */
+//sales per product
 $salesPerProduct = [];
 $sql = "
 SELECT
@@ -67,9 +59,7 @@ $salesPerProduct[] = $row;
 }
 }
 
-/* =========================
-SALES OVER TIME (MONTHLY) - KG + REVENUE
-========================= */
+//sales over time (monthly)
 $months = [];
 $salesKgData = [];
 $salesRevData = [];
@@ -96,9 +86,6 @@ $salesRevData[] = (float)$row['total_rev'];
 }
 }
 
-/* =========================
-KPI SUMMARY
-========================= */
 $topProduct = $salesPerProduct[0]['product_label'] ?? 'N/A';
 $totalSoldKg = array_sum($salesKgData);
 $totalRevenue = array_sum($salesRevData);
@@ -114,9 +101,7 @@ if($totalMonths >= 2 && (float)$salesKgData[$totalMonths-2] > 0){
 $growth = (($salesKgData[$totalMonths-1] - $salesKgData[$totalMonths-2]) / $salesKgData[$totalMonths-2]) * 100;
 }
 
-/* =========================
-Forecast (Next 3 months) - SMA on KG
-========================= */
+//forecast sma
 function nextMonthsLabels($n = 3){
 $labels = [];
 $dt = new DateTime('first day of this month');
@@ -142,7 +127,6 @@ $forecastData[] = round($avg, 2);
 $series[] = $avg;
 }
 } else {
-// no sales data yet -> keep conservative zero forecast
 $forecastData = [0.00,0.00,0.00];
 }
 
@@ -155,9 +139,7 @@ for($i=0; $i<count($forecastLabels); $i++){
 $forecastTable[] = ['month'=>$forecastLabels[$i], 'pred'=>$forecastData[$i]];
 }
 
-/* =========================================================
-Sales by Day of Week (last 90 days)
-========================================================= */
+//sales by the day of the week
 $daysOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 $daySalesMap = array_fill_keys($daysOrder, 0.0);
 
@@ -198,9 +180,7 @@ foreach($daySalesMap as $d=>$kg){
 if($kg > $peakKg){ $peakKg=$kg; $peakDay=$d; }
 }
 
-/* =========================================================
-Restock Suggestions (last 30 days)
-========================================================= */
+//restock suggestions
 $restockRows = [];
 $fastMovers = [];
 $slowMovers = [];
@@ -246,7 +226,6 @@ $allProdForRestock[] = $r;
 }
 }
 
-/* Store computed fields back into array */
 foreach($allProdForRestock as &$r){
 $current = (float)$r['current_stock'];
 $soldN = (float)$r['sold_last_n'];
@@ -269,7 +248,7 @@ $r['_status'] = $status;
 }
 unset($r);
 
-/* Top 5 restock priority (OUT/REORDER first, then lower days cover) */
+//top 5 restock prio
 $restockCandidates = [];
 foreach($allProdForRestock as $r){
 $avgDaily = (float)($r['_avgDaily'] ?? 0);
@@ -295,15 +274,12 @@ return $da <=> $db;
 
 $restockRows = array_slice($restockCandidates, 0, 5);
 
-/* Fast movers = top 5 sold_last_n */
 $fastMovers = array_slice($allProdForRestock, 0, 5);
 
-/* Slow movers = bottom 5 sold_last_n */
 $slowMovers = $allProdForRestock;
 usort($slowMovers, fn($a,$b)=> (float)$a['sold_last_n'] <=> (float)$b['sold_last_n']);
 $slowMovers = array_slice($slowMovers, 0, 5);
 
-/* KPI extras */
 $restockAlertCount = count($restockCandidates);
 $outOfStockCount = 0;
 foreach($allProdForRestock as $r){
@@ -312,9 +288,7 @@ if(($r['_status'] ?? 'OK') === 'OUT') $outOfStockCount++;
 $growthClass = ($growth >= 0) ? 'text-success' : 'text-danger';
 $growthIcon = ($growth >= 0) ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
 
-/* =========================================================
-NEW CHART DATA: Top Products + Stock Levels
-========================================================= */
+//top product stock levels
 $topProdLabels = [];
 $topProdKg = [];
 foreach(array_slice($salesPerProduct, 0, 10) as $r){
@@ -322,7 +296,7 @@ $topProdLabels[] = (string)$r['product_label'];
 $topProdKg[] = (float)$r['total_sold_kg'];
 }
 
-// Stock chart: top 10 highest current stock
+//top highest stock
 $stockLabels = [];
 $stockData = [];
 $stockSorted = $allProdForRestock;
@@ -347,7 +321,6 @@ $stockData[] = (float)$r['current_stock'];
 <link href="../css/layout.css" rel="stylesheet">
 
 <style>
-/* IMPORTANT: if your analytics-box doesn't force height, charts may collapse */
 .chartWrap{ position:relative; height:260px; }
 .kpi-value{
 font-size:1.6rem;
@@ -376,7 +349,6 @@ button, .btn, nav, .sidebar { display:none !important; }
 
 <?php include '../includes/admin_sidebar.php'; ?>
 
-<!-- MAIN -->
 <main class="col-lg-10 ms-sm-auto px-4 main-content">
 <div class="py-4">
 
@@ -388,7 +360,6 @@ button, .btn, nav, .sidebar { display:none !important; }
 <button class="btn btn-outline-dark" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Print</button>
 </div>
 
-<!-- KPI -->
 <div class="row g-3 mb-3">
 <div class="col-12 col-md-3">
 <div class="card card-soft">
@@ -430,7 +401,6 @@ button, .btn, nav, .sidebar { display:none !important; }
 
 </div>
 
-<!-- NEW: QUICK DASHBOARD CHARTS -->
 <div class="analytics-row mb-3">
 
 <div class="analytics-box">
@@ -463,10 +433,7 @@ button, .btn, nav, .sidebar { display:none !important; }
 
 </div>
 
-<!-- Day of Week + Restock -->
 <div class="analytics-row mb-3">
-
-<!-- DAY OF WEEK -->
 <div class="analytics-box">
 <div class="d-flex justify-content-between align-items-start">
 <div>
@@ -477,7 +444,6 @@ button, .btn, nav, .sidebar { display:none !important; }
 <div class="chartWrap"><canvas id="dowChart"></canvas></div>
 </div>
 
-<!-- RESTOCK SUGGESTIONS -->
 <div class="analytics-box">
 <h5 class="fw-bold mb-1">Suggested Restock (Top Priority)</h5>
 <div class="small-note mb-2">
@@ -528,10 +494,8 @@ if(($r['_status'] ?? 'OK') === 'OUT') $badge = "danger";
 
 </div>
 
-<!-- Sales per Product + Sales over time + forecast -->
 <div class="analytics-row">
 
-<!-- SALES PER PRODUCT -->
 <div class="analytics-box">
 <h5 class="fw-bold mb-3">Sales per Product (All Time, kg)</h5>
 
@@ -563,7 +527,6 @@ Revenue: ₱<?= number_format((float)$row['total_revenue'],2) ?>
 <?php endif; ?>
 </div>
 
-<!-- SALES + FORECAST -->
 <div class="analytics-box">
 <h5 class="fw-bold mb-1">Sales Over Time + Forecast</h5>
 <div class="small-note mb-2">Forecast uses Simple Moving Average (SMA) on KG sold.</div>
@@ -596,7 +559,6 @@ Revenue: ₱<?= number_format((float)$row['total_revenue'],2) ?>
 
 </div>
 
-<!-- Fast/Slow movers -->
 <div class="analytics-row mt-3">
 <div class="analytics-box">
 <h5 class="fw-bold mb-1">Fast Moving Products (Last <?= (int)$RESTOCK_LOOKBACK_DAYS ?> Days)</h5>
@@ -655,7 +617,6 @@ Revenue: ₱<?= number_format((float)$row['total_revenue'],2) ?>
 </div>
 
 <script>
-// Everything in one file: data + chart rendering
 const D = <?= json_encode([
 'months' => $months,
 'salesKgData' => $salesKgData,
@@ -715,7 +676,7 @@ ticks: { callback: (v) => fmtNum(v) }
 }, extra);
 }
 
-// 1) Monthly KG Trend
+//monthly kg trend
 safeChart(byId('monthlyKgChart'), {
 type: 'line',
 data: {
@@ -734,7 +695,7 @@ fill: true
 options: baseOptions()
 });
 
-// 2) Monthly Revenue Trend
+//monthly revenue trend
 safeChart(byId('monthlyRevChart'), {
 type: 'line',
 data: {
@@ -773,7 +734,7 @@ ticks: { callback: (v) => `PHP ${fmtNum(v)}` }
 })
 });
 
-// 3) Top Products
+//top products
 safeChart(byId('topProductsChart'), {
 type: 'bar',
 data: {
@@ -793,7 +754,7 @@ y: { beginAtZero: true }
 })
 });
 
-// 4) Stock Levels
+//stock levels
 safeChart(byId('stockChart'), {
 type: 'bar',
 data: {
@@ -813,7 +774,7 @@ y: { beginAtZero: true }
 })
 });
 
-// 5) Sales Over Time + Forecast
+//sales overtime/forecast
 safeChart(byId('salesChart'), {
 type: 'line',
 data: {
@@ -841,7 +802,7 @@ borderColor: '#ff7f0e'
 options: baseOptions()
 });
 
-// 6) Sales by Day of Week
+//sales by week
 safeChart(byId('dowChart'), {
 type: 'bar',
 data: {

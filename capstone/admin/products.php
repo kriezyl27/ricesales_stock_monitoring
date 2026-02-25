@@ -19,22 +19,15 @@
       exit;
   }
 
-  /* =========================================================
-    ✅ GRADES (REAL RICE QUALITY TERMS)
-  ========================================================= */
   $ALLOWED_GRADES = ['Premium','Special','Regular','Broken'];
 
-  /* =========================
-    ✅ CSRF TOKEN (Security)
-  ========================= */
+
   if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
   }
   $CSRF_TOKEN = $_SESSION['csrf_token'];
 
-  /* =========================
-    HELPER: ACTIVITY LOG
-  ========================= */
+ 
   function logActivity($conn, $user_id, $type, $desc){
       $stmt = $conn->prepare("INSERT INTO activity_logs (user_id, activity_type, description, created_at)
                               VALUES (?, ?, ?, NOW())");
@@ -43,9 +36,6 @@
       $stmt->close();
   }
 
-  /* =========================
-    LOAD GLOBAL THRESHOLDS
-  ========================= */
   $DEFAULT_LOW_STOCK_THRESHOLD  = 10;
   $DEFAULT_OVERSTOCK_THRESHOLD  = 1000;
 
@@ -65,32 +55,26 @@
   $LOW_STOCK_THRESHOLD  = (float)($settingsRow['low_threshold_kg'] ?? $DEFAULT_LOW_STOCK_THRESHOLD);
   $OVERSTOCK_THRESHOLD  = (float)($settingsRow['over_threshold_kg'] ?? $DEFAULT_OVERSTOCK_THRESHOLD);
 
-  /* =========================
-    SAVE GLOBAL THRESHOLDS
-  ========================= */
   if(isset($_POST['save_thresholds'])){
 
-    // ✅ Admin only
+    
     if(($role ?? '') !== 'admin'){
       http_response_code(403);
       exit('Forbidden');
     }
 
-    // ✅ CSRF verify
     $postedToken = (string)($_POST['csrf_token'] ?? '');
     if(!$postedToken || !hash_equals($_SESSION['csrf_token'] ?? '', $postedToken)){
       header("Location: products.php?error=" . urlencode("Security check failed."));
       exit;
     }
 
-    // ✅ Password confirmation
     $admin_password = (string)($_POST['admin_password'] ?? '');
     if($admin_password === ''){
       header("Location: products.php?error=" . urlencode("Admin password required."));
       exit;
     }
 
-    /* Verify password */
     $stmt = $conn->prepare("SELECT password FROM users WHERE user_id=? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -102,7 +86,6 @@
       exit;
     }
 
-    // ✅ Validate numeric inputs
     $low_raw  = $_POST['low_stock_threshold'] ?? null;
     $over_raw = $_POST['overstock_threshold'] ?? null;
 
@@ -114,7 +97,6 @@
     $low  = (float)$low_raw;
     $over = (float)$over_raw;
 
-    /* Safety caps */
     $MAX_LOW  = 100000;
     $MAX_OVER = 1000000;
 
@@ -128,7 +110,6 @@
         $over = min($MAX_OVER, $low + 1);
     }
 
-    /* ✅ UPDATE DATABASE (NOW SAFE) */
     $stmt = $conn->prepare("
         UPDATE stock_settings
         SET low_threshold_kg=?, over_threshold_kg=?
@@ -149,14 +130,6 @@
     exit;
   }
 
-  /* =========================
-    HANDLE ADD PRODUCT
-    - grade dropdown (Premium/Special/Regular/Broken)
-    - no SKU
-    - no delivery_date
-    - price_per_sack + price_per_kg
-    - unit_weight_kg (sack size)
-  ========================= */
   if(isset($_POST['add_product'])){
       $variety        = trim($_POST['variety'] ?? '');
       $grade          = trim($_POST['grade'] ?? '');
@@ -187,9 +160,6 @@
       exit;
   }
 
-  /* =========================
-    HANDLE EDIT PRODUCT
-  ========================= */
   if(isset($_POST['edit_product'])){
       $product_id     = (int)($_POST['product_id'] ?? 0);
       $variety        = trim($_POST['variety'] ?? '');
@@ -221,9 +191,6 @@
       exit;
   }
 
-  /* =========================
-    HANDLE ARCHIVE
-  ========================= */
   if(isset($_GET['archive'])){
       $archive_id = (int)($_GET['archive'] ?? 0);
 
@@ -238,9 +205,6 @@
       exit;
   }
 
-  /* =========================
-    FETCH PRODUCTS + COMPUTED STOCK
-  ========================= */
   $sql = "
   SELECT
     p.*,
@@ -263,7 +227,6 @@
       die("Query Error: " . $conn->error);
   }
 
-  /* Overstock list for modal */
   $overItems = [];
   $products = [];
   if($productsRes && $productsRes->num_rows > 0){
@@ -300,7 +263,6 @@
 
   <?php include '../includes/admin_sidebar.php'; ?>
 
-  <!-- Main Content -->
   <main class="col-lg-10 ms-sm-auto px-4 main-content">
 
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -412,7 +374,6 @@ if($unit_weight > 0){
   </td>
   </tr>
 
-  <!-- Edit Product Modal -->
   <div class="modal fade" id="editProductModal<?= (int)$row['product_id'] ?>" tabindex="-1">
   <div class="modal-dialog">
   <div class="modal-content">
@@ -493,7 +454,6 @@ if($unit_weight > 0){
   </table>
   </div>
 
-  <!-- Overstock Modal -->
   <?php if(count($overItems) > 0): ?>
   <div class="modal fade" id="overStockModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -540,7 +500,6 @@ if($unit_weight > 0){
   </div>
   <?php endif; ?>
 
-  <!-- Threshold Modal-->
   <div class="modal fade" id="thresholdModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -595,8 +554,7 @@ if($unit_weight > 0){
       </div>
     </div>
   </div>
-
-  <!-- Add Product Modal -->
+  
   <div class="modal fade" id="addProductModal" tabindex="-1">
   <div class="modal-dialog">
   <div class="modal-content">

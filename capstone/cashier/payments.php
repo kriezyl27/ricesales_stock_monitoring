@@ -13,9 +13,6 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
 
-/* =========================
-Handle Add Payment
-========================= */
 if(isset($_POST['add_payment'])){
   $sale_id = (int)($_POST['sale_id'] ?? 0);
   $amount = (float)($_POST['amount'] ?? 0);
@@ -139,9 +136,6 @@ if(isset($_POST['add_payment'])){
   }
 }
 
-/* =========================
-Filters
-========================= */
 $q = trim($_GET['q'] ?? '');
 $filter_status = strtolower(trim($_GET['status'] ?? 'open')); // open|all|paid
 
@@ -166,9 +160,6 @@ if($filter_status === 'open'){
   $where .= " AND LOWER(IFNULL(ar.status,'')) = 'paid'";
 }
 
-/* =========================
-Receivables list
-========================= */
 $sql = "
 SELECT
   ar.ar_id, ar.sales_id, ar.customer_id, ar.total_amount, ar.amount_paid, ar.balance,
@@ -188,9 +179,6 @@ $stmt->execute();
 $ars = $stmt->get_result();
 $stmt->close();
 
-/* =========================
-If sale preselected
-========================= */
 $prefill_sale_id = (int)($_GET['sale_id'] ?? 0);
 $prefill = null;
 
