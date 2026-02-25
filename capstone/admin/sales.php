@@ -113,8 +113,8 @@ $stmt->close();
 
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
-      <h3 class="fw-bold mb-1">Sales Management (Admin)</h3>
-      <div class="text-muted">Shows all cashier sales. POS writes to sales + sales_items.</div>
+      <h3 class="fw-bold mb-1">Sales Overview (Admin)</h3>
+      <div class="text-muted">Shows all cashier sales</div>
     </div>
   </div>
 

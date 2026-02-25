@@ -173,7 +173,7 @@ body { background:#f4f6f9; padding-top: 60px;}
 <main class="col-lg-10 ms-auto main-content">
 <div class="container-fluid py-4">
 
-<h3 class="mb-4">Inventory Timeline</h3>
+<h3 class="mb-4">Stocks Overview Timeline</h3>
 
 <?php if(isset($message)): ?>
 <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>

@@ -34,7 +34,7 @@
 
       <li class="nav-item">
         <a class="nav-link <?= ($activePage==='sales'?'active':'') ?>" href="sales.php">
-          <i class="fas fa-cash-register me-2"></i>Sales
+          <i class="fas fa-cash-register me-2"></i>Sales Overview
         </a>
       </li>
 
