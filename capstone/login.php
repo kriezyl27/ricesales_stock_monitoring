@@ -54,7 +54,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Login | Rice Inventory Control System</title>
+<title>Login | Rice Control System</title>
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0f172a">
@@ -77,7 +77,7 @@ if (isset($_SESSION['user_id'])) {
         <img src="assets/logo.jpg" alt="Logo" style="height:42px;" class="mb-4">
 
         <h2 class="fw-bold mb-1">Welcome back!</h2>
-        <p class="text-muted mb-3">Login to Rice Inventory Control System</p>
+        <p class="text-muted mb-3">Login to Rice Control System</p>
 
         <div class="mb-3">
           <span class="hint-badge"><i class="fa-solid fa-user-shield"></i> Admin</span>

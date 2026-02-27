@@ -225,7 +225,7 @@ if($prefill_sale_id > 0){
         <?= h($username) ?> <small class="text-muted">(Cashier)</small>
       </a>
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="../profile.php"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
+        <li><a class="dropdown-item" href="cashier_profile.php"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
         <li><a class="dropdown-item text-danger" href="../logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
       </ul>
     </div>

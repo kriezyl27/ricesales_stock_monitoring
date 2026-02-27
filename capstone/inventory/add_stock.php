@@ -12,7 +12,22 @@ include '../config/db.php';
 
 $error = "";
 
-$OVERSTOCK_LIMIT_KG = 1000; // warehouse max capacity per product (kg)
+$DEFAULT_OVERSTOCK_LIMIT_KG = 1000; // fallback max capacity per product (kg)
+$OVERSTOCK_LIMIT_KG = $DEFAULT_OVERSTOCK_LIMIT_KG;
+
+$settingsRes = $conn->query("
+    SELECT over_threshold_kg
+    FROM stock_settings
+    WHERE id=1
+    LIMIT 1
+");
+if($settingsRes){
+    $settingsRow = $settingsRes->fetch_assoc();
+    $configuredOver = (float)($settingsRow['over_threshold_kg'] ?? 0);
+    if($configuredOver > 0){
+        $OVERSTOCK_LIMIT_KG = $configuredOver;
+    }
+}
 
 if(isset($_POST['ajax']) && $_POST['ajax'] === 'add_supplier'){
     header('Content-Type: application/json; charset=utf-8');

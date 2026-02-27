@@ -135,9 +135,6 @@
       $grade          = trim($_POST['grade'] ?? '');
       $unit_weight_kg = (float)($_POST['unit_weight_kg'] ?? 0);
 
-      $price_per_sack = (float)($_POST['price_per_sack'] ?? 0);
-      $price_per_kg   = (float)($_POST['price_per_kg'] ?? 0);
-
       if($variety === '' || $grade === '' || !in_array($grade, $ALLOWED_GRADES, true) || $unit_weight_kg <= 0){
           header("Location: products.php?error=" . urlencode("Please complete all required fields."));
           exit;
@@ -145,12 +142,12 @@
 
       $stmt = $conn->prepare("INSERT INTO products
           (variety, grade, unit_weight_kg, price_per_sack, price_per_kg, created_at, archived)
-          VALUES (?,?,?,?,?,NOW(),0)");
+          VALUES (?,?,?,0,0,NOW(),0)");
       if(!$stmt){
           header("Location: products.php?error=" . urlencode("DB error: ".$conn->error));
           exit;
       }
-      $stmt->bind_param("ssddd", $variety, $grade, $unit_weight_kg, $price_per_sack, $price_per_kg);
+      $stmt->bind_param("ssd", $variety, $grade, $unit_weight_kg);
       $stmt->execute();
       $stmt->close();
 
@@ -165,7 +162,6 @@
       $variety        = trim($_POST['variety'] ?? '');
       $grade          = trim($_POST['grade'] ?? '');
       $unit_weight_kg = (float)($_POST['unit_weight_kg'] ?? 0);
-
       $price_per_sack = (float)($_POST['price_per_sack'] ?? 0);
       $price_per_kg   = (float)($_POST['price_per_kg'] ?? 0);
 
@@ -419,19 +415,19 @@ if($unit_weight > 0){
 
   <div class="row g-2">
     <div class="col-md-6">
-      <label>Price per Sack (₱)</label>
+      <label>Price per Sack (PHP)</label>
       <input class="form-control" type="number" step="0.01" min="0" name="price_per_sack"
             value="<?= htmlspecialchars($row['price_per_sack'] ?? 0) ?>" required>
     </div>
     <div class="col-md-6">
-      <label>Price per kg (₱)</label>
+      <label>Price per kg (PHP)</label>
       <input class="form-control" type="number" step="0.01" min="0" name="price_per_kg"
             value="<?= htmlspecialchars($row['price_per_kg'] ?? 0) ?>" required>
     </div>
   </div>
 
   <div class="alert alert-info mt-2 mb-0">
-    <b>Note:</b> Stock cannot be edited in Product settings. Use <b>Stock In (Receiving)</b>, <b>Adjust Stock</b>, Sales, or Returns.
+    <b>Note:</b> Stock cannot be edited in Product settings.
   </div>
 
   </div>
@@ -445,6 +441,7 @@ if($unit_weight > 0){
   </div>
   </div>
   </div>
+
   <?php endforeach; ?>
   <?php else: ?>
   <tr><td colspan="9" class="text-center text-muted">No active products found.</td></tr>
@@ -594,19 +591,8 @@ if($unit_weight > 0){
     </select>
   </div>
 
-  <div class="row g-2">
-    <div class="col-md-6">
-      <label>Price per Sack (₱)</label>
-      <input class="form-control" type="number" step="0.01" min="0" name="price_per_sack" value="0" required>
-    </div>
-    <div class="col-md-6">
-      <label>Price per kg (₱)</label>
-      <input class="form-control" type="number" step="0.01" min="0" name="price_per_kg" value="0" required>
-    </div>
-  </div>
-
   <div class="alert alert-info mt-2 mb-0">
-    Add product details first, then use <b>Stock In (Receiving)</b> when stock arrives.
+    Add product details first, then use <b>Stock In (Receiving)</b> to set automatic pricing when stock arrives.
   </div>
 
   </div>

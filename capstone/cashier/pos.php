@@ -29,33 +29,9 @@ function pos_save_old($customer_id, $sale_type, $due_date, $discount_type, $disc
 }
 
 function compute_kinsenas_due_date(): string {
-  $today = new DateTime();
-  $year  = (int)$today->format('Y');
-  $month = (int)$today->format('m');
-  $day   = (int)$today->format('d');
-
-  $kinsenas = [2, 15, 25, 30];
-  $lastDayThisMonth = (int)$today->format('t');
-
-  foreach ($kinsenas as $kday) {
-    $realKday = $kday;
-    if ($realKday > $lastDayThisMonth) $realKday = $lastDayThisMonth;
-
-    // ✅ strictly greater than today
-    if ($day < $realKday) {
-      return sprintf('%04d-%02d-%02d', $year, $month, $realKday);
-    }
-  }
-
-  // If none left this month -> due on 2nd of next month
-  $nextMonth = $month + 1;
-  $nextYear  = $year;
-  if ($nextMonth > 12) {
-    $nextMonth = 1;
-    $nextYear++;
-  }
-
-  return sprintf('%04d-%02d-%02d', $nextYear, $nextMonth, 2);
+  $due = new DateTime();
+  $due->modify('+15 days');
+  return $due->format('Y-m-d');
 }
 
 $products = [];
@@ -147,7 +123,7 @@ if(isset($_POST['checkout'])){
     $discount_type = 'none';
   }
 
-  // AUTO due date for utang (NEXT kinsenas only)
+  // AUTO due date for utang (+15 days from today)
   $due_date_post = '';
   if($sale_type === 'utang'){
     $due_date_post = compute_kinsenas_due_date();
@@ -391,15 +367,9 @@ if(isset($_POST['checkout'])){
   margin-bottom: 8px;
 }
 .items-wrap{
-  max-height: 360px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   border-radius: 10px;
-}
-.items-wrap thead th{
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  white-space: nowrap;
 }
 .items-table td, .items-table th{
   vertical-align: middle;
@@ -427,6 +397,48 @@ if(isset($_POST['checkout'])){
   min-width: 88px;
   display: inline-block;
   text-align: center;
+}
+.items-table thead{
+  display: none;
+}
+.items-table,
+.items-table tbody,
+.items-table tr,
+.items-table td{
+  display: block;
+  width: 100%;
+}
+.items-table tr{
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+.items-table td{
+  border: 0 !important;
+  padding: .35rem 0;
+}
+.items-table td::before{
+  content: attr(data-label);
+  display: block;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #6c757d;
+  margin-bottom: .2rem;
+}
+.items-table .prod-select,
+.items-table .unit-select,
+.items-table .qty-input,
+.items-table .price-input{
+  min-width: 0;
+  width: 100%;
+}
+.items-table td[data-label="Actions"]{
+  text-align: right;
+}
+.items-table td[data-label="Actions"]::before{
+  display: none;
 }
 </style>
 </head>
@@ -512,7 +524,7 @@ if(isset($_POST['checkout'])){
 
                   <!-- AUTO DUE DATE DISPLAY -->
                   <div class="mb-3 d-none" id="dueDateWrap">
-                    <label class="form-label fw-semibold">Auto Due Date (Kinsenas)</label>
+                    <label class="form-label fw-semibold">Auto Due Date (+15 days)</label>
                     <input type="text" class="form-control" id="dueDateText" readonly value="<?= h($old_due_date ?: '—') ?>">
                   </div>
 
@@ -631,10 +643,6 @@ if(isset($_POST['checkout'])){
                 </form>
 
                 <hr>
-
-                <div class="small text-muted">
-                  Tip: Use consistent customer names for accurate utang tracking & forecasting later.
-                </div>
               </div>
             </div>
           </div>
@@ -662,25 +670,9 @@ function formatISODate(y, m, d){
 }
 
 function computeKinsenasDueDateClient(){
-  const now = new Date();
-  const year = now.getFullYear();
-  const monthIndex = now.getMonth();
-  const day = now.getDate();
-
-  const kinsenas = [2, 15, 25, 30];
-  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-
-  for (const k of kinsenas){
-    let kk = k;
-    if (kk > lastDay) kk = lastDay;
-    if(day < kk){
-      return formatISODate(year, monthIndex + 1, kk);
-    }
-  }
-
-  let ny = year, nm = monthIndex + 2;
-  if(nm === 13){ nm = 1; ny = year + 1; }
-  return formatISODate(ny, nm, 2);
+  const due = new Date();
+  due.setDate(due.getDate() + 15);
+  return formatISODate(due.getFullYear(), due.getMonth() + 1, due.getDate());
 }
 
 function toggleDueDate(){
@@ -707,6 +699,7 @@ function addRow(){
 
   // Product select
   const tdProd = document.createElement('td');
+  tdProd.setAttribute('data-label', 'Product');
   const sel = document.createElement('select');
   sel.name = "product_id[]";
   sel.className = "form-select form-select-sm prod-select";
@@ -727,10 +720,12 @@ function addRow(){
 
   // Stock badge
   const tdStock = document.createElement('td');
+  tdStock.setAttribute('data-label', 'Stock');
   tdStock.innerHTML = `<span class="badge bg-secondary stock-pill">0.00 kg</span>`;
 
   // Unit type
   const tdUnit = document.createElement('td');
+  tdUnit.setAttribute('data-label', 'Unit');
   const unitSel = document.createElement('select');
   unitSel.name = "unit_type[]";
   unitSel.className = "form-select form-select-sm unit-select";
@@ -743,6 +738,7 @@ function addRow(){
 
   // Qty input (generic)
   const tdQty = document.createElement('td');
+  tdQty.setAttribute('data-label', 'Qty');
   const qty = document.createElement('input');
   qty.type = "number";
   qty.step = "0.01";
@@ -756,6 +752,12 @@ function addRow(){
 
   // Price (readonly)
   const tdPrice = document.createElement('td');
+  tdPrice.setAttribute('data-label', 'Price');
+  const priceWrap = document.createElement('div');
+  priceWrap.className = "input-group input-group-sm";
+  const pesoPrefix = document.createElement('span');
+  pesoPrefix.className = "input-group-text";
+  pesoPrefix.textContent = "₱";
   const price = document.createElement('input');
   price.type = "number";
   price.step = "0.01";
@@ -764,20 +766,25 @@ function addRow(){
   price.className = "form-control form-control-sm price-input";
   price.readOnly = true;
   price.tabIndex = -1;
-  tdPrice.appendChild(price);
+  priceWrap.appendChild(pesoPrefix);
+  priceWrap.appendChild(price);
+  tdPrice.appendChild(priceWrap);
 
   // Line total
   const tdDeduct = document.createElement('td');
+  tdDeduct.setAttribute('data-label', 'Deduct (kg)');
   tdDeduct.className = "text-end";
   tdDeduct.innerHTML = `<span class="deduct-text text-muted">0.00</span>`;
 
   // Line total
   const tdLine = document.createElement('td');
+  tdLine.setAttribute('data-label', 'Line');
   tdLine.className = "text-end";
   tdLine.innerHTML = `<span class="fw-bold line-text">₱0.00</span>`;
 
   // Remove btn
   const tdX = document.createElement('td');
+  tdX.setAttribute('data-label', 'Actions');
   const btn = document.createElement('button');
   btn.type = "button";
   btn.className = "btn btn-sm btn-outline-danger";

@@ -72,21 +72,46 @@ if(isset($_GET['cash']) && is_numeric($_GET['cash'])){
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+:root{
+  --paper-w: 420px;
+  --muted: #6c757d;
+}
 body{ background:#f4f6f9; }
 .paper{
-  max-width:420px;
-  margin:20px auto;
-  background:#fff;
-  padding:18px;
-  border-radius:10px;
-  box-shadow:0 6px 16px rgba(0,0,0,.12);
+  max-width: var(--paper-w);
+  margin: 18px auto;
+  background: #fff;
+  padding: 18px 18px 14px;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.12);
 }
 .mono{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
                "Liberation Mono", "Courier New", monospace;
 }
-.small2{ font-size:12px; }
-.dash{ border-top:1px dashed #777; margin:10px 0; }
+.small2{ font-size: 12px; line-height: 1.25; }
+.small3{ font-size: 11px; line-height: 1.2; color: var(--muted); }
+.hr-dash{ border-top:1px dashed #888; margin: 10px 0; }
+.kv{
+  display:flex; justify-content:space-between; gap:10px;
+}
+.kv span:first-child{ color: var(--muted); }
+.badge-pill{
+  display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px;
+}
+.badge-paid{ background:#e7f7ee; color:#127a3c; border:1px solid #bfe7ce; }
+.badge-partial{ background:#fff3cd; color:#7a5a00; border:1px solid #ffe69c; }
+.totalBox{
+  border:1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fafbfc;
+}
+.totalDue{
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
 @media print{
   body{ background:#fff; }
   .no-print{ display:none !important; }
@@ -101,109 +126,106 @@ body{ background:#f4f6f9; }
   <!-- HEADER -->
   <div class="text-center">
     <div class="fw-bold"><?= h($companyName) ?></div>
-    <div class="small2"><?= h($companyAddr) ?></div>
-    <div class="small2">VAT REG TIN: <?= h($vatTin) ?></div>
-    <div class="small2"><?= h($posSn) ?></div>
-    <div class="small2"><?= h($minNo) ?></div>
-    <div class="fw-bold mt-2"><?= h($payLabel) ?></div>
+    <div class="small3"><?= h($companyAddr) ?></div>
+    <div class="small3">VAT REG TIN: <?= h($vatTin) ?></div>
+    <div class="small3"><?= h($posSn) ?> • <?= h($minNo) ?></div>
+    <div class="mt-2 fw-bold"><?= h($payLabel) ?></div>
+
+    <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
+      <?php if($fullyPaid): ?>
+        <span class="badge-pill badge-paid">FULLY PAID</span>
+      <?php else: ?>
+        <span class="badge-pill badge-partial">PARTIAL PAYMENT</span>
+      <?php endif; ?>
+      <?php if($hasDiscount): ?>
+        <span class="badge-pill" style="background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;">
+          <?= h($discountType) ?> DISCOUNT (ON SALE)
+        </span>
+      <?php endif; ?>
+    </div>
   </div>
 
-  <div class="dash"></div>
+  <div class="hr-dash"></div>
 
-  <!-- DETAILS -->
+  <!-- META -->
   <div class="small2">
-    <div><b>Payment #:</b> <?= (int)$data['payment_id'] ?></div>
-    <div><b>Invoice / Sale #:</b> <?= (int)$data['sale_id'] ?></div>
-    <div><b>Sale Date:</b> <?= !empty($data['sale_date']) ? h(date("m/d/Y H:i", strtotime($data['sale_date']))) : '—' ?></div>
-    <div><b>Payment Date:</b> <?= !empty($data['paid_at']) ? h(date("m/d/Y H:i", strtotime($data['paid_at']))) : '—' ?></div>
-    <div><b>Cashier:</b> <?= h($data['cashier_name'] ?: 'Cashier') ?></div>
-    <div><b>Customer:</b> <?= h($customer) ?></div>
+    <div class="kv"><span>Payment #</span><span><b><?= (int)$data['payment_id'] ?></b></span></div>
+    <div class="kv"><span>Sale #</span><span><b><?= (int)$data['sale_id'] ?></b></span></div>
+    <div class="kv"><span>Sale Date</span><span><?= !empty($data['sale_date']) ? h(date("m/d/Y h:i A", strtotime($data['sale_date']))) : '—' ?></span></div>
+    <div class="kv"><span>Payment Date</span><span><?= !empty($data['paid_at']) ? h(date("m/d/Y h:i A", strtotime($data['paid_at']))) : '—' ?></span></div>
+    <div class="kv"><span>Cashier</span><span><?= h($data['cashier_name'] ?: 'Cashier') ?></span></div>
+    <div class="kv"><span>Customer</span><span><?= h($customer) ?></span></div>
     <?php if(!empty($data['phone'])): ?>
-      <div><b>Phone:</b> <?= h($data['phone']) ?></div>
+      <div class="kv"><span>Phone</span><span><?= h($data['phone']) ?></span></div>
     <?php endif; ?>
   </div>
 
   <?php if($hasDiscount): ?>
-    <div class="small2 mt-1 text-muted">
+    <div class="small3 mt-2">
       <b>Note:</b> Discount applied on original sale: <b>LESS <?= h($discountType) ?> DISC</b>
     </div>
   <?php endif; ?>
 
-  <div class="dash"></div>
+  <div class="hr-dash"></div>
 
-  <!-- PAYMENT -->
-  <div class="small2">
+  <!-- PAYMENT SUMMARY -->
+  <div class="totalBox">
     <div class="d-flex justify-content-between fw-bold">
       <span>PAYMENT AMOUNT</span>
       <span>₱<?= number_format((float)$data['amount'],2) ?></span>
     </div>
 
-    <div class="d-flex justify-content-between">
-      <span>Method</span>
-      <span><?= h(strtoupper((string)($data['method'] ?? 'CASH'))) ?></span>
-    </div>
+    <div class="small2 kv mt-1"><span>Method</span><span><?= h(strtoupper((string)($data['method'] ?? 'CASH'))) ?></span></div>
 
     <?php if(!empty($data['external_ref'])): ?>
-      <div class="d-flex justify-content-between">
-        <span>Reference</span>
-        <span><?= h($data['external_ref']) ?></span>
-      </div>
+      <div class="small2 kv"><span>Reference</span><span><?= h($data['external_ref']) ?></span></div>
     <?php endif; ?>
 
     <?php if($cashGiven !== null): ?>
-      <div class="d-flex justify-content-between">
-        <span>CASH</span>
-        <span>₱<?= number_format($cashGiven,2) ?></span>
-      </div>
-      <div class="d-flex justify-content-between">
-        <span>CHANGE</span>
-        <span>₱<?= number_format(max(0,$change),2) ?></span>
-      </div>
+      <div class="small2 kv"><span>Cash</span><span>₱<?= number_format($cashGiven,2) ?></span></div>
+      <div class="small2 kv"><span>Change</span><span>₱<?= number_format(max(0,$change),2) ?></span></div>
     <?php endif; ?>
   </div>
 
-  <div class="dash"></div>
+  <div class="hr-dash"></div>
 
   <!-- BALANCE SUMMARY -->
-  <div class="small2">
-    <div class="d-flex justify-content-between">
+  <div class="totalBox">
+    <div class="small2 kv">
       <span>Total Utang (Invoice Total)</span>
       <span>₱<?= number_format((float)$data['total_amount'],2) ?></span>
     </div>
-    <div class="d-flex justify-content-between">
+    <div class="small2 kv">
       <span>Total Paid So Far</span>
       <span>₱<?= number_format((float)($data['amount_paid'] ?? 0),2) ?></span>
     </div>
-    <div class="d-flex justify-content-between fw-bold">
-      <span>Remaining Balance</span>
-      <span>₱<?= number_format(max(0,$remaining),2) ?></span>
+    <div class="hr-dash"></div>
+    <div class="d-flex justify-content-between align-items-end">
+      <div class="small2 text-muted">REMAINING BALANCE</div>
+      <div class="totalDue">₱ <?= number_format(max(0,$remaining),2) ?></div>
     </div>
 
     <?php if(!empty($data['due_date'])): ?>
-      <div class="d-flex justify-content-between">
-        <span>Due Date</span>
-        <span><?= h(date("m/d/Y", strtotime($data['due_date']))) ?></span>
-      </div>
+      <div class="small3 mt-2">Due: <?= h(date("m/d/Y", strtotime($data['due_date']))) ?></div>
     <?php endif; ?>
   </div>
 
-  <div class="dash"></div>
+  <div class="hr-dash"></div>
 
-  <!-- STATUS -->
   <?php if($fullyPaid): ?>
-    <div class="alert alert-success py-2 small2 mb-2">
+    <div class="small2">
       <div class="fw-bold">STATUS: FULLY PAID</div>
-      <div class="text-muted">Utang cleared. Thank you!</div>
+      <div class="small3">Utang cleared. Thank you!</div>
     </div>
   <?php else: ?>
-    <div class="alert alert-warning py-2 small2 mb-2">
+    <div class="small2">
       <div class="fw-bold">STATUS: PARTIAL PAYMENT</div>
-      <div class="text-muted">Please pay remaining balance on/before due date.</div>
+      <div class="small3">Please pay remaining balance on/before due date.</div>
     </div>
   <?php endif; ?>
 
-  <div class="text-center small2 text-muted mt-2">
-    --- END OF PAYMENT RECEIPT ---
+  <div class="text-center small3 mt-3">
+    — END OF RECEIPT —
   </div>
 
   <div class="no-print d-grid gap-2 mt-3">

@@ -97,9 +97,12 @@ $items = [];
 if($view_id > 0){
 // Ensure cashier can only view own sales
 $stmt = $conn->prepare("
-SELECT s.*, c.first_name, c.last_name
+SELECT s.*, c.first_name, c.last_name,
+       ar.due_date AS ar_due_date,
+       IFNULL(ar.balance, 0) AS ar_balance
 FROM sales s
 LEFT JOIN customers c ON s.customer_id = c.customer_id
+LEFT JOIN account_receivable ar ON ar.sales_id = s.sale_id
 WHERE s.sale_id=? AND s.user_id=?
 LIMIT 1
 ");
@@ -150,7 +153,7 @@ $stmt->close();
 <?= h($username) ?> <small class="text-muted">(Cashier)</small>
 </a>
 <ul class="dropdown-menu dropdown-menu-end">
-<li><a class="dropdown-item" href="../profile.php"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
+<li><a class="dropdown-item" href="cashier_profile.php"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
 <li><a class="dropdown-item text-danger" href="../logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
 </ul>
 </div>
@@ -317,6 +320,17 @@ $link = 'sales_history.php?'.http_build_query($base);
 <div class="text-muted small">Total</div>
 <div class="h5 fw-bold">₱<?= number_format((float)$saleInfo['total_amount'],2) ?></div>
 </div>
+
+<?php
+  $detailStatus = strtolower(trim((string)($saleInfo['status'] ?? '')));
+  $detailDueDate = trim((string)($saleInfo['ar_due_date'] ?? ''));
+?>
+<?php if($detailStatus === 'unpaid' && $detailDueDate !== ''): ?>
+<div class="mb-3">
+<div class="text-muted small">Due Date</div>
+<div class="fw-semibold text-danger"><?= date("M d, Y", strtotime($detailDueDate)) ?></div>
+</div>
+<?php endif; ?>
 
 <div class="table-responsive">
 <table class="table table-sm align-middle mb-0">

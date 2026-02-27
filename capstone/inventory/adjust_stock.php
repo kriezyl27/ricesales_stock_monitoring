@@ -12,6 +12,23 @@ $user_id = (int)($_SESSION['user_id'] ?? 0);
 include '../config/db.php';
 $error = "";
 
+$DEFAULT_OVERSTOCK_LIMIT_KG = 1000;
+$OVERSTOCK_LIMIT_KG = $DEFAULT_OVERSTOCK_LIMIT_KG;
+
+$settingsRes = $conn->query("
+    SELECT over_threshold_kg
+    FROM stock_settings
+    WHERE id=1
+    LIMIT 1
+");
+if($settingsRes){
+    $settingsRow = $settingsRes->fetch_assoc();
+    $configuredOver = (float)($settingsRow['over_threshold_kg'] ?? 0);
+    if($configuredOver > 0){
+        $OVERSTOCK_LIMIT_KG = $configuredOver;
+    }
+}
+
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
     $product_id  = (int)($_POST['product_id'] ?? 0);
@@ -41,31 +58,38 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             $conn->begin_transaction();
             try{
 
+                // Get current stock for validation checks
+                $check = $conn->prepare("
+                    SELECT IFNULL(SUM(
+                        CASE
+                            WHEN LOWER(type)='in' THEN qty_kg
+                            WHEN LOWER(type)='out' THEN -qty_kg
+                            ELSE 0
+                        END
+                    ),0) AS stock_kg
+                    FROM inventory_transactions
+                    WHERE product_id=?
+                ");
+                $check->bind_param("i",$product_id);
+                $check->execute();
+                $current = $check->get_result()->fetch_assoc();
+                $check->close();
+                $current_stock = (float)($current['stock_kg'] ?? 0);
+
                 // Check stock if reducing
                 if($adjust_type === "out"){
-
-                    $check = $conn->prepare("
-                        SELECT IFNULL(SUM(
-                            CASE
-                                WHEN LOWER(type)='in' THEN qty_kg
-                                WHEN LOWER(type)='out' THEN -qty_kg
-                                ELSE 0
-                            END
-                        ),0) AS stock_kg
-                        FROM inventory_transactions
-                        WHERE product_id=?
-                    ");
-
-                    $check->bind_param("i",$product_id);
-                    $check->execute();
-                    $current = $check->get_result()->fetch_assoc();
-                    $check->close();
-
-                    $current_stock = (float)($current['stock_kg'] ?? 0);
-
                     if($current_stock < $qty_kg){
                         throw new Exception("Insufficient stock. Current: "
                             .number_format($current_stock,2)." kg");
+                    }
+                } elseif($adjust_type === "in"){
+                    $projected = $current_stock + $qty_kg;
+                    if($projected > $OVERSTOCK_LIMIT_KG){
+                        throw new Exception("Cannot add stock. This will exceed the overstock threshold.\n"
+                            . "Current stock: " . number_format($current_stock,2) . " kg\n"
+                            . "Incoming: " . number_format($qty_kg,2) . " kg\n"
+                            . "Projected: " . number_format($projected,2) . " kg\n"
+                            . "Limit: " . number_format($OVERSTOCK_LIMIT_KG,2) . " kg");
                     }
                 }
 
@@ -291,7 +315,7 @@ ORDER BY p.variety ASC
 <option value="<?=$row['product_id']?>"
         data-stock="<?=$row['stock_kg']?>"
         data-weight="<?=$row['unit_weight_kg']?>">
-<?= htmlspecialchars($row['variety']." - ".$row['grade']) ?>
+<?= htmlspecialchars($row['variety']." - ".$row['grade']." (".(float)$row['unit_weight_kg']." kg/sack)") ?>
 </option>
 <?php endwhile; ?>
 </select>

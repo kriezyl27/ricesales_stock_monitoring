@@ -279,6 +279,16 @@ $fastMovers = array_slice($allProdForRestock, 0, 5);
 $slowMovers = $allProdForRestock;
 usort($slowMovers, fn($a,$b)=> (float)$a['sold_last_n'] <=> (float)$b['sold_last_n']);
 $slowMovers = array_slice($slowMovers, 0, 5);
+$fastTop = $fastMovers[0] ?? null;
+$slowTop = $slowMovers[0] ?? null;
+$maxFastSold = 0.0;
+$maxSlowSold = 0.0;
+foreach($fastMovers as $r){
+if((float)$r['sold_last_n'] > $maxFastSold) $maxFastSold = (float)$r['sold_last_n'];
+}
+foreach($slowMovers as $r){
+if((float)$r['sold_last_n'] > $maxSlowSold) $maxSlowSold = (float)$r['sold_last_n'];
+}
 
 $restockAlertCount = count($restockCandidates);
 $outOfStockCount = 0;
@@ -335,6 +345,56 @@ color:#6c757d;
 font-size:1.2rem;
 font-weight:700;
 }
+.mover-feature{
+border:1px solid #dbe8ff;
+border-radius:14px;
+background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 100%);
+padding:14px;
+}
+.mover-kpi{
+display:inline-flex;
+align-items:center;
+gap:8px;
+padding:6px 10px;
+border-radius:999px;
+font-size:.82rem;
+font-weight:600;
+background:#fff;
+border:1px solid #d9e6ff;
+}
+.mover-card{
+border-radius:12px;
+border:1px solid #e6ebf2;
+background:#fff;
+padding:10px;
+}
+.mover-card.fast{ border-left:5px solid #198754; }
+.mover-card.slow{ border-left:5px solid #dc3545; }
+.mover-rank{
+display:inline-flex;
+width:26px;
+height:26px;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+font-size:.78rem;
+font-weight:700;
+background:#f0f3f8;
+color:#334155;
+}
+.mover-bar{
+height:8px;
+border-radius:999px;
+background:#edf2f7;
+overflow:hidden;
+}
+.mover-fill{
+display:block;
+height:100%;
+border-radius:999px;
+}
+.mover-fill.fast{ background:linear-gradient(90deg,#16a34a,#22c55e); }
+.mover-fill.slow{ background:linear-gradient(90deg,#f59e0b,#ef4444); }
 @media print {
 button, .btn, nav, .sidebar { display:none !important; }
 }
@@ -559,53 +619,90 @@ Revenue: ₱<?= number_format((float)$row['total_revenue'],2) ?>
 
 </div>
 
-<div class="analytics-row mt-3">
-<div class="analytics-box">
-<h5 class="fw-bold mb-1">Fast Moving Products (Last <?= (int)$RESTOCK_LOOKBACK_DAYS ?> Days)</h5>
-<div class="table-responsive">
-<table class="table table-sm table-bordered align-middle mb-0">
-<thead class="table-light">
-<tr>
-<th>Product</th>
-<th class="text-end">Sold (<?= (int)$RESTOCK_LOOKBACK_DAYS ?>d)</th>
-<th class="text-end">Current Stock (kg)</th>
-</tr>
-</thead>
-<tbody>
-<?php foreach($fastMovers as $r): ?>
-<tr>
-<td class="fw-semibold"><?= htmlspecialchars($r['product_label']) ?></td>
-<td class="text-end"><?= number_format((float)$r['sold_last_n'],2) ?></td>
-<td class="text-end"><?= number_format((float)$r['current_stock'],2) ?></td>
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
+<div class="mover-feature mt-3">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+<div>
+<h5 class="fw-bold mb-1"><i class="fa-solid fa-bolt me-1 text-primary"></i>Fast & Slow Movers Spotlight</h5>
+<div class="small text-muted">Based on sales in the last <?= (int)$RESTOCK_LOOKBACK_DAYS ?> days</div>
+</div>
+<div class="d-flex flex-wrap gap-2">
+<span class="mover-kpi"><i class="fa-solid fa-fire text-success"></i>Fastest: <?= htmlspecialchars((string)($fastTop['product_label'] ?? 'N/A')) ?></span>
+<span class="mover-kpi"><i class="fa-solid fa-snowflake text-danger"></i>Slowest: <?= htmlspecialchars((string)($slowTop['product_label'] ?? 'N/A')) ?></span>
 </div>
 </div>
 
-<div class="analytics-box">
-<h5 class="fw-bold mb-1">Slow Moving Products (Last <?= (int)$RESTOCK_LOOKBACK_DAYS ?> Days)</h5>
-<div class="small-note mb-2">Useful to avoid overstock/spoilage</div>
+<div class="analytics-row">
+<div class="analytics-box mover-card fast">
+<h6 class="fw-bold mb-2 text-success">Fast Moving Products</h6>
+<?php if(empty($fastMovers)): ?>
+<div class="alert alert-light border mb-0">No sales movement yet in this window.</div>
+<?php else: ?>
 <div class="table-responsive">
-<table class="table table-sm table-bordered align-middle mb-0">
+<table class="table table-sm align-middle mb-0">
 <thead class="table-light">
 <tr>
+<th style="width:56px">Rank</th>
 <th>Product</th>
-<th class="text-end">Sold (<?= (int)$RESTOCK_LOOKBACK_DAYS ?>d)</th>
-<th class="text-end">Current Stock (kg)</th>
+<th class="text-end">Sold</th>
+<th class="text-end">Stock</th>
 </tr>
 </thead>
 <tbody>
-<?php foreach($slowMovers as $r): ?>
+<?php foreach($fastMovers as $idx=>$r): ?>
+<?php $pct = $maxFastSold > 0 ? (((float)$r['sold_last_n'] / $maxFastSold) * 100) : 0; ?>
 <tr>
-<td class="fw-semibold"><?= htmlspecialchars($r['product_label']) ?></td>
-<td class="text-end"><?= number_format((float)$r['sold_last_n'],2) ?></td>
-<td class="text-end"><?= number_format((float)$r['current_stock'],2) ?></td>
+<td><span class="mover-rank"><?= (int)($idx+1) ?></span></td>
+<td>
+<div class="fw-semibold"><?= htmlspecialchars($r['product_label']) ?></div>
+<div class="mover-bar mt-1"><span class="mover-fill fast" style="width: <?= number_format($pct,1,'.','') ?>%"></span></div>
+</td>
+<td class="text-end fw-semibold"><?= number_format((float)$r['sold_last_n'],2) ?> kg</td>
+<td class="text-end"><?= number_format((float)$r['current_stock'],2) ?> kg</td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
+<?php endif; ?>
+</div>
+
+<div class="analytics-box mover-card slow">
+<h6 class="fw-bold mb-2 text-danger">Slow Moving Products</h6>
+<div class="small-note mb-2">Useful to avoid overstock/spoilage</div>
+<?php if(empty($slowMovers)): ?>
+<div class="alert alert-light border mb-0">No products available for movement ranking.</div>
+<?php else: ?>
+<div class="table-responsive">
+<table class="table table-sm align-middle mb-0">
+<thead class="table-light">
+<tr>
+<th style="width:56px">Rank</th>
+<th>Product</th>
+<th class="text-end">Sold</th>
+<th class="text-end">Stock</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach($slowMovers as $idx=>$r): ?>
+<?php
+$ratio = $maxSlowSold > 0 ? (((float)$r['sold_last_n'] / $maxSlowSold) * 100) : 0;
+$stagnantPct = 100 - $ratio;
+if($stagnantPct < 8) $stagnantPct = 8;
+?>
+<tr>
+<td><span class="mover-rank"><?= (int)($idx+1) ?></span></td>
+<td>
+<div class="fw-semibold"><?= htmlspecialchars($r['product_label']) ?></div>
+<div class="mover-bar mt-1"><span class="mover-fill slow" style="width: <?= number_format($stagnantPct,1,'.','') ?>%"></span></div>
+</td>
+<td class="text-end fw-semibold"><?= number_format((float)$r['sold_last_n'],2) ?> kg</td>
+<td class="text-end"><?= number_format((float)$r['current_stock'],2) ?> kg</td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+<?php endif; ?>
 </div>
 </div>
 </div>

@@ -185,50 +185,16 @@ $name = trim(($c['first_name'] ?? '').' '.($c['last_name'] ?? ''));
 <td class="text-end">
 <button class="btn btn-sm btn-outline-dark"
 data-bs-toggle="modal"
-data-bs-target="#editCustomerModal<?= (int)$c['customer_id'] ?>">
+data-bs-target="#editCustomerModal"
+data-customer-id="<?= (int)$c['customer_id'] ?>"
+data-first-name="<?= h($c['first_name'] ?? '') ?>"
+data-last-name="<?= h($c['last_name'] ?? '') ?>"
+data-phone="<?= h($c['phone'] ?? '') ?>"
+data-address="<?= h($c['address'] ?? '') ?>">
 <i class="fa-solid fa-pen-to-square"></i>
 </button>
 </td>
 </tr>
-
-<!-- EDIT MODAL -->
-<div class="modal fade" id="editCustomerModal<?= (int)$c['customer_id'] ?>" tabindex="-1">
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title">Edit Customer</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<form method="POST">
-<div class="modal-body">
-<input type="hidden" name="edit_customer" value="1">
-<input type="hidden" name="customer_id" value="<?= (int)$c['customer_id'] ?>">
-
-<div class="mb-2">
-<label class="form-label">First Name</label>
-<input class="form-control" name="first_name" required value="<?= h($c['first_name'] ?? '') ?>">
-</div>
-<div class="mb-2">
-<label class="form-label">Last Name</label>
-<input class="form-control" name="last_name" required value="<?= h($c['last_name'] ?? '') ?>">
-</div>
-<div class="mb-2">
-<label class="form-label">Phone</label>
-<input class="form-control" name="phone" required value="<?= h($c['phone'] ?? '') ?>">
-</div>
-<div class="mb-2">
-<label class="form-label">Address</label>
-<textarea class="form-control" name="address" rows="2"><?= h($c['address'] ?? '') ?></textarea>
-</div>
-</div>
-<div class="modal-footer">
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-<button class="btn btn-dark"><i class="fa-solid fa-floppy-disk me-1"></i> Save</button>
-</div>
-</form>
-</div>
-</div>
-</div>
 
 <?php endwhile; ?>
 <?php else: ?>
@@ -242,6 +208,45 @@ data-bs-target="#editCustomerModal<?= (int)$c['customer_id'] ?>">
 </div>
 </main>
 
+</div>
+</div>
+
+<!-- EDIT MODAL (single reusable modal) -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Edit Customer</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form method="POST">
+<div class="modal-body">
+<input type="hidden" name="edit_customer" value="1">
+<input type="hidden" name="customer_id" id="edit_customer_id">
+
+<div class="mb-2">
+<label class="form-label">First Name</label>
+<input class="form-control" name="first_name" id="edit_first_name" required>
+</div>
+<div class="mb-2">
+<label class="form-label">Last Name</label>
+<input class="form-control" name="last_name" id="edit_last_name" required>
+</div>
+<div class="mb-2">
+<label class="form-label">Phone</label>
+<input class="form-control" name="phone" id="edit_phone" required>
+</div>
+<div class="mb-2">
+<label class="form-label">Address</label>
+<textarea class="form-control" name="address" id="edit_address" rows="2"></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-dark"><i class="fa-solid fa-floppy-disk me-1"></i> Save</button>
+</div>
+</form>
+</div>
 </div>
 </div>
 
@@ -285,5 +290,19 @@ data-bs-target="#editCustomerModal<?= (int)$c['customer_id'] ?>">
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const editModalEl = document.getElementById('editCustomerModal');
+if(editModalEl){
+  editModalEl.addEventListener('show.bs.modal', function(event){
+    const btn = event.relatedTarget;
+    if(!btn) return;
+    document.getElementById('edit_customer_id').value = btn.getAttribute('data-customer-id') || '';
+    document.getElementById('edit_first_name').value = btn.getAttribute('data-first-name') || '';
+    document.getElementById('edit_last_name').value = btn.getAttribute('data-last-name') || '';
+    document.getElementById('edit_phone').value = btn.getAttribute('data-phone') || '';
+    document.getElementById('edit_address').value = btn.getAttribute('data-address') || '';
+  });
+}
+</script>
 </body>
 </html>
